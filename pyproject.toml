@@ -1,8 +1,18 @@
 [project]
 name = "KE01f"
 version = "0.0.1"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "dvc>=3.67.1",
+    "matplotlib>=3.11.1",
+    "openpyxl>=3.1.5",
+    "pandas>=3.0.5",
+    "pdfplumber>=0.11.10",
+    "pyarrow>=25.0.1",
+    "pyproj>=3.7.2",
+    "scipy>=1.18.0",
+    "seaborn>=0.13.2",
+    "shapely>=2.1.2",
 ]
 
 authors = [

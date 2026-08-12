@@ -5,3 +5,7 @@
 CLAUDE.md
 AGENTS.md
 /article
+
+# Python bytecode caches
+__pycache__/
+*.py[cod]
