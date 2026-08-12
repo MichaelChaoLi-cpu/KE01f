@@ -1,0 +1,878 @@
+doc_type: actionbrief
+version: 1.0.0
+datasetDictionary:
+  population_census_2020:
+    datasetSourceName: 2020 Population Census T001231 and e-Stat Kumamoto mesh geography
+    datasetDescription: Resident population, household, age, disclosure-group, and populated 125 m mesh records
+      used to locate potential shelter demand.
+    datasetAttribute: other
+    datasetProvider: Statistics Bureau of Japan via e-Stat
+    datasetGenerationInfo: Official census tabulation joined to official 125 m mesh polygons while retaining disclosure-group
+      support for suppressed cells.
+    datasetPeriod: 2020 census reference year
+    datasetScale: 62,945 populated meshes and 36,657 disclosure groups across Kumamoto Prefecture
+    datasetSpatialResolution: Populated 125 m mesh and official disclosure group
+    datasetTemporalResolution: Single census reference year
+    datasetPreprocessingInfo: Inherited immutably from the audited KE01 workflow; standardized geometry to JGD2011
+      and preserved disclosure grouping without duplicating suppressed values.
+  housing_loss_demand_upstream:
+    datasetSourceName: kumamoto_grid_exposure_estimates_preprocessed.parquet
+    datasetDescription: Prefecture-wide low, central, and high earthquake-related housing-loss shelter-demand estimates
+      used as scenario inputs rather than re-estimated outcomes.
+    datasetAttribute: table
+    datasetProvider: Authors, inherited from the audited KE01 earthquake-demand workflow
+    datasetGenerationInfo: Combined 2020 census exposure, official earthquake evidence, building exposure proxies,
+      and bounded functional-housing-loss assumptions.
+    datasetPeriod: 2020 population under the 28 July 2026 earthquake scenario
+    datasetScale: 36,657 residential disclosure-group demand units
+    datasetSpatialResolution: Disclosure group linked to constituent 125 m meshes
+    datasetTemporalResolution: Static first-72-hour scenario input
+    datasetPreprocessingInfo: Copied without changing upstream demand totals; retained low, central, high, older-resident,
+      geometry, and epicentral-distance fields and documented their scenario interpretation.
+  administrative_areas_2025:
+    datasetSourceName: MLIT National Land Numerical Information N03 administrative areas
+    datasetDescription: Municipality and Kumamoto City ward polygons used for spatial linkage, reporting, and map
+      boundaries.
+    datasetAttribute: geojson
+    datasetProvider: Ministry of Land, Infrastructure, Transport and Tourism
+    datasetGenerationInfo: Official N03 administrative polygons for Kumamoto Prefecture.
+    datasetPeriod: 2025-01-01 boundary reference
+    datasetScale: 49 municipality or designated-city ward polygons representing 45 municipalities
+    datasetSpatialResolution: Municipality or ward polygon
+    datasetTemporalResolution: Single boundary reference date
+    datasetPreprocessingInfo: Inherited from the audited KE01b workflow; standardized codes and labels, retained
+      ward polygons, and collapsed Kumamoto City wards only for municipality summaries.
+  designated_shelter_inventory:
+    datasetSourceName: kumamoto_designated_shelters_geospatial_preprocessed.parquet
+    datasetDescription: Officially listed designated shelters with facility identity, accepted-person descriptions,
+      addresses, and coordinates.
+    datasetAttribute: table
+    datasetProvider: Official municipal shelter records compiled in the audited KE01 workflow
+    datasetGenerationInfo: Compiled official records were harmonized into a prefecture-wide geolocated shelter inventory.
+    datasetPeriod: Latest official inventory available before the 2026 analysis
+    datasetScale: '1,315 designated shelters: 1,156 general and 159 welfare-specific'
+    datasetSpatialResolution: Individual shelter point
+    datasetTemporalResolution: Static facility inventory
+    datasetPreprocessingInfo: Inherited immutably from KE01; standardized identifiers and coordinates, classified
+      general versus welfare-specific service from accepted-person descriptions, and did not infer capacity from
+      facility type.
+  official_event_shelter_snapshots:
+    datasetSourceName: kumamoto_2026_official_shelter_use_snapshots_preprocessed.parquet
+    datasetDescription: Four official prefecture-wide counts of open shelters and reported evacuees within the first
+      72 hours.
+    datasetAttribute: table
+    datasetProvider: Kumamoto Prefectural Government disaster headquarters
+    datasetGenerationInfo: Counts were extracted from four official reports and checked against the visually reviewed
+      summary pages and report-specific as-of times.
+    datasetPeriod: 28 July to 30 July 2026
+    datasetScale: 4 prefecture-wide aggregate observations
+    datasetSpatialResolution: Kumamoto Prefecture aggregate
+    datasetTemporalResolution: Four irregular discrete event snapshots
+    datasetPreprocessingInfo: Parsed report values, separated meeting time from observation time, calculated elapsed
+      hours, retained source provenance, and flagged the largest available reported count without claiming a continuous
+      series or true event peak.
+  official_municipal_capacity_sources:
+    datasetSourceName: kumamoto_prefecture_official_shelter_capacity_sources_preprocessed.parquet
+    datasetDescription: Facility-level official capacity, area, and earthquake-suitability records recovered for
+      three source-proximate municipalities.
+    datasetAttribute: table
+    datasetProvider: Uki City, Uto City, and Yatsushiro City governments
+    datasetGenerationInfo: Official municipal tables were extracted or faithfully structured with their municipality-specific
+      capacity definitions and source provenance retained.
+    datasetPeriod: 2022 to 2026 source editions
+    datasetScale: 190 official source rows, including 128 matched shelter capacities
+    datasetSpatialResolution: Individual official facility record
+    datasetTemporalResolution: Static source editions
+    datasetPreprocessingInfo: Standardized facility names and numeric fields, preserved primary and secondary definitions,
+      retained missing values and source pages, and avoided applying one municipality definition to another.
+  shelter_capacity_evidence_audit:
+    datasetSourceName: prefecture_shelter_capacity_evidence_audit.parquet
+    datasetDescription: Master shelter inventory linked to numeric capacity, documented area, school identity, public-facility
+      identity, and hierarchical evidence grades.
+    datasetAttribute: table
+    datasetProvider: Authors, derived from official shelter and municipal facility sources
+    datasetGenerationInfo: Matched official source rows to the 1,315-shelter inventory using reviewed name, address,
+      and spatial evidence and assigned one primary evidence tier per shelter.
+    datasetPeriod: 2026 analytical audit using source editions through 2026
+    datasetScale: 1,315 audited shelter records
+    datasetSpatialResolution: Individual shelter point
+    datasetTemporalResolution: Static evidence audit
+    datasetPreprocessingInfo: Separated numeric capacity, gymnasium area, gross area, identity-only links, and unmatched
+      records; retained match multiplicity and deduplication flags; no universal area-to-person conversion was imposed.
+  pedestrian_screened_road_network:
+    datasetSourceName: kumamoto_routable_road_edges_preprocessed.parquet
+    datasetDescription: Grade-aware road edges used to construct the pedestrian-screened shortest-path network.
+    datasetAttribute: table
+    datasetProvider: Authors, derived from MLIT National Land Numerical Information N13 road centerlines
+    datasetGenerationInfo: The upstream routable network was built from 2024 road centerlines with explicit topology,
+      length, category, toll, eligibility, and availability fields.
+    datasetPeriod: 2024 road reference
+    datasetScale: 390,234 baseline routable road edges before pedestrian screening
+    datasetSpatialResolution: Routable road edge
+    datasetTemporalResolution: Static baseline network
+    datasetPreprocessingInfo: Retained eligible and available edges, removed national expressways and toll edges
+      for walking, recomputed components, and did not convert motor-vehicle restriction records into pedestrian
+      closures.
+  walking_network_access_inputs:
+    datasetSourceName: kumamoto_prefecture_demand_mesh_walking_network_access_preprocessed.parquet and kumamoto_prefecture_shelter_walking_network_access_preprocessed.parquet
+    datasetDescription: Population meshes and designated shelters attached directly to the pedestrian-screened road
+      network with scenario demand fields.
+    datasetAttribute: table
+    datasetProvider: Authors, derived from census meshes, official shelters, and the MLIT-based road network
+    datasetGenerationInfo: Demand-mesh centroids and shelter points were snapped to the nearest eligible walking
+      edge in EPSG:6670; grouped demand was allocated to constituent meshes using population shares.
+    datasetPeriod: 2020 population and 2024 roads under the 2026 earthquake scenario
+    datasetScale: 62,945 demand meshes and 1,315 shelter points
+    datasetSpatialResolution: Populated 125 m mesh and individual shelter point
+    datasetTemporalResolution: Static scenario linkage
+    datasetPreprocessingInfo: Excluded expressways and toll edges, accepted direct snaps within 250 m, retained
+      rejected snaps and connector distances, recomputed components, and exactly preserved each prefecture-wide
+      demand total.
+  nearest_shelter_walking_access:
+    datasetSourceName: kumamoto_prefecture_nearest_shelter_walking_access_preprocessed.parquet
+    datasetDescription: Nearest general-shelter walking distance, time, and threshold reachability for every populated
+      mesh.
+    datasetAttribute: table
+    datasetProvider: Authors, derived from pedestrian-screened network access inputs
+    datasetGenerationInfo: Shortest paths include the demand connector, within-network distance, and shelter connector
+      and are evaluated at 3 and 4 km/h for 10, 15, and 30 minutes.
+    datasetPeriod: 2026 scenario analysis
+    datasetScale: 62,945 populated mesh records
+    datasetSpatialResolution: Populated 125 m mesh
+    datasetTemporalResolution: Static scenario grid across walking speeds and thresholds
+    datasetPreprocessingInfo: Calculated nearest distance up to the 30-minute maximum screen, preserved beyond-screen
+      status, generated reachability indicators, and imposed no capacity or opening constraint.
+  capacity_threshold_results:
+    datasetSourceName: capacity-threshold-estimate analytical outputs
+    datasetDescription: Aggregate and municipality-contained reverse shelter-opening requirements, critical capacity,
+      and official-capacity threshold calibration.
+    datasetAttribute: table
+    datasetProvider: Authors
+    datasetGenerationInfo: Applied standardized capacities of 25, 50, 100, and 200 persons to four demand scenarios
+      and compared them with official aggregate-use snapshots and documented capacities.
+    datasetPeriod: First 0-72 hours after 28 July 2026
+    datasetScale: 180 municipality-scenario records plus aggregate and calibration summaries
+    datasetSpatialResolution: Municipality, prefecture, or capacity-threshold result
+    datasetTemporalResolution: Static scenario grid
+    datasetPreprocessingInfo: Kept welfare-specific supply separate, deduplicated official capacity evidence, calculated
+      reverse requirements before network assignment, and labeled thresholds as assumptions rather than observed
+      facility capacities.
+  capacity_constrained_allocation:
+    datasetSourceName: kumamoto_prefecture_primary_shelter_allocation_preprocessed.parquet and robustness outputs
+    datasetDescription: Mesh-level served and unmet demand from the capacity-constrained shelter-opening and assignment
+      model, with threshold, access, and failure sensitivities.
+    datasetAttribute: table
+    datasetProvider: Authors
+    datasetGenerationInfo: A lexicographic mixed-integer model maximized served demand, minimized openings, and
+      then minimized walking distance subject to reachability, demand, capacity, and opening constraints.
+    datasetPeriod: First 0-72 hours after 28 July 2026
+    datasetScale: 62,945 primary mesh allocations plus scenario, municipality, and facility-loss summaries
+    datasetSpatialResolution: Populated 125 m mesh, municipality, or shelter-removal scenario
+    datasetTemporalResolution: Static primary scenario and sensitivity grid
+    datasetPreprocessingInfo: Solved the 50-person, 415-opening, 15-minute, 4-km/h primary model; retained solver
+      status and bounds; ran demand-geography, capacity, walking, random-unavailability, targeted-loss, and screened
+      single-shelter sensitivities.
+variableDictionary:
+  residential_demand_unit_id:
+    variableNameInDataset: Residential Demand Unit ID
+    variableNameInArticle: Residential Demand Unit Identifier
+    variableAttribute: categorical
+    variableUnit: identifier
+    variableDescription: 'Role: spatial identifier. Definition: One unique identifier per disclosure group. Construction:
+      Preserved from the upstream grouped 125 m population mesh product.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  constituent_125_m_mesh_count:
+    variableNameInDataset: Constituent 125 m Mesh Count
+    variableNameInArticle: Number of Constituent 125 m Population Meshes
+    variableAttribute: count
+    variableUnit: meshes
+    variableDescription: 'Role: spatial-unit descriptor. Definition: Number of original 125 m meshes represented
+      by one residential demand unit. Construction: Preserved to prevent disclosure groups from being misinterpreted
+      as single meshes.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  municipality_code:
+    variableNameInDataset: Municipality Code
+    variableNameInArticle: Canonical Municipality Code
+    variableAttribute: categorical
+    variableUnit: administrative code
+    variableDescription: 'Role: reporting identifier. Definition: One canonical code for each of the 45 municipalities.
+      Construction: Kumamoto City wards are collapsed to municipality code 43100 for municipal summaries while their
+      polygon codes are retained separately.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  administrative_polygon_code:
+    variableNameInDataset: Administrative Polygon Code
+    variableNameInArticle: Municipality or Ward Polygon Code
+    variableAttribute: categorical
+    variableUnit: administrative code
+    variableDescription: 'Role: spatial join identifier. Definition: Code of the administrative polygon intersecting
+      the demand unit representative point. Construction: Retains Kumamoto City ward codes and municipality codes
+      elsewhere.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  municipality:
+    variableNameInDataset: Municipality
+    variableNameInArticle: Municipality Name
+    variableAttribute: categorical
+    variableUnit: municipality
+    variableDescription: 'Role: reporting stratum. Definition: One of the 45 municipalities in Kumamoto Prefecture.
+      Construction: Assigned by representative-point intersection with official administrative polygons.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  ward:
+    variableNameInDataset: Ward
+    variableNameInArticle: Kumamoto City Ward
+    variableAttribute: categorical
+    variableUnit: ward
+    variableDescription: 'Role: secondary reporting stratum. Definition: One of five wards for observations inside
+      Kumamoto City; missing elsewhere. Construction: Retained for within-city reporting without narrowing the prefecture-wide
+      study area.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 8233
+  residential_population:
+    variableNameInDataset: Residential Population
+    variableNameInArticle: Residential Population
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: denominator. Definition: Population residing in a residential demand unit. Construction:
+      Preserved from the 2020 population-mesh preprocessing.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  population_age_65:
+    variableNameInDataset: Population Age 65+
+    variableNameInArticle: Residential Population Age 65 or Older
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: vulnerable-population denominator. Definition: Residents age 65 or older in demand
+      unit \(i\). Construction: Preserved from the population-mesh preprocessing.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  epicentral_distance:
+    variableNameInDataset: Epicentral Distance (km)
+    variableNameInArticle: Distance from the Official Hypocenter
+    variableAttribute: continuous
+    variableUnit: kilometers
+    variableDescription: 'Role: exposure descriptor. Definition: Great-circle or projected distance in kilometers
+      from demand unit \(i\) to the official hypocenter. Construction: Preserved from the upstream earthquake-demand
+      product.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  housing_loss_shelter_demand_low:
+    variableNameInDataset: Housing-Loss Shelter Demand Low
+    variableNameInArticle: Lower Housing-Loss Shelter-Demand Estimate
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: demand. Definition: \(D_i^{low}\) Construction: Lower-bound upstream affected-population
+      estimate for every prefecture-wide demand unit.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  housing_loss_shelter_demand_central:
+    variableNameInDataset: Housing-Loss Shelter Demand Central
+    variableNameInArticle: Central Housing-Loss Shelter-Demand Estimate
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: demand. Definition: \(D_i^{central}\) Construction: Central upstream affected-population
+      estimate for every prefecture-wide demand unit.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  housing_loss_shelter_demand_high:
+    variableNameInDataset: Housing-Loss Shelter Demand High
+    variableNameInArticle: Upper Housing-Loss Shelter-Demand Estimate
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: demand. Definition: \(D_i^{high}\) Construction: Upper-bound upstream affected-population
+      estimate for every prefecture-wide demand unit.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  housing_loss_shelter_demand_age_65_central:
+    variableNameInDataset: Housing-Loss Shelter Demand Age 65+ Central
+    variableNameInArticle: Central Older-Resident Shelter-Demand Estimate
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: vulnerable demand. Definition: \(D_{i,65+}^{central}\) Construction: Upstream central
+      affected-population estimate for residents age 65 or older.'
+    variableSource: housing_loss_demand_upstream
+    observationNumber: 36657
+  observation_timestamp:
+    variableNameInDataset: Observation Timestamp
+    variableNameInArticle: Event Shelter-Use Observation Timestamp
+    variableAttribute: categorical
+    variableUnit: Japan Standard Time timestamp
+    variableDescription: 'Role: validation timestamp. Definition: Official as-of time in Japan Standard Time. Construction:
+      Distinguished from the later disaster-headquarters meeting time where the report states an earlier data cutoff.'
+    variableSource: official_event_shelter_snapshots
+    observationNumber: 4
+  hours_since_earthquake:
+    variableNameInDataset: Hours Since Earthquake
+    variableNameInArticle: Elapsed Hours at Shelter-Use Observation
+    variableAttribute: continuous
+    variableUnit: hours
+    variableDescription: 'Role: validation timing. Definition: Hours from 16:27 JST on 28 July 2026 to the official
+      as-of time. Construction: Used only to locate discrete observations within the 0-72-hour window.'
+    variableSource: official_event_shelter_snapshots
+    observationNumber: 4
+  open_shelters:
+    variableNameInDataset: Open Shelters
+    variableNameInArticle: Official Prefecture-Wide Open Shelter Count
+    variableAttribute: count
+    variableUnit: shelters
+    variableDescription: 'Role: observed system use. Definition: Number of open shelters at the observation timestamp.
+      Construction: Extracted and visually verified from four prefectural disaster-headquarters reports.'
+    variableSource: official_event_shelter_snapshots
+    observationNumber: 4
+  reported_evacuees:
+    variableNameInDataset: Reported Evacuees
+    variableNameInArticle: Official Prefecture-Wide Shelter Users
+    variableAttribute: count
+    variableUnit: persons
+    variableDescription: 'Role: observed-use benchmark. Definition: Aggregate evacuees reported across Kumamoto
+      Prefecture. Construction: Values are 4,744, 9,872, 8,886, and 10,467; no municipal allocation is inferred.'
+    variableSource: official_event_shelter_snapshots
+    observationNumber: 4
+  highest_observed_within_available_0_72h_snapshots:
+    variableNameInDataset: Highest Observed within Available 0-72h Snapshots
+    variableNameInArticle: Available-Snapshot Maximum Flag
+    variableAttribute: boolean
+    variableUnit: indicator
+    variableDescription: 'Role: benchmark flag. Definition: Equals 1 for the largest reported evacuee count among
+      the four available snapshots. Construction: Identifies 10,467 at 07:30 on 30 July without claiming it is the
+      true event peak.'
+    variableSource: official_event_shelter_snapshots
+    observationNumber: 4
+  observed_use_stress_demand_population_weighted:
+    variableNameInDataset: Observed-Use Stress Demand Population Weighted
+    variableNameInArticle: Population-Weighted Spatialization of Highest Available Observed Use
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: stress demand. Definition: \(D_i^{pop}=10467P_i/\sum_rP_r\). Construction: Preserves
+      prefecture total 10,467 and follows Residential Population; it is modeled local demand, not observed origins.'
+    variableSource: walking_network_access_inputs
+    observationNumber: 62945
+  observed_use_stress_demand_central_housing_loss_weighted:
+    variableNameInDataset: Observed-Use Stress Demand Central Housing-Loss Weighted
+    variableNameInArticle: Central-Loss-Weighted Spatialization of Highest Available Observed Use
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: stress demand. Definition: \(D_i^{central-anchor}=10467H_i^{central}/\sum_rH_r^{central}\).
+      Construction: Preserves prefecture total 10,467 and follows central housing-loss geography; it is modeled
+      local demand.'
+    variableSource: walking_network_access_inputs
+    observationNumber: 62945
+  observed_use_stress_demand_high_housing_loss_weighted:
+    variableNameInDataset: Observed-Use Stress Demand High Housing-Loss Weighted
+    variableNameInArticle: High-Loss-Weighted Spatialization of Highest Available Observed Use
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: stress demand. Definition: \(D_i^{high-anchor}=10467H_i^{high}/\sum_rH_r^{high}\).
+      Construction: Preserves prefecture total 10,467 and follows high housing-loss geography; it is modeled local
+      demand.'
+    variableSource: walking_network_access_inputs
+    observationNumber: 62945
+  shelter_id:
+    variableNameInDataset: Shelter ID
+    variableNameInArticle: Designated Shelter Identifier
+    variableAttribute: categorical
+    variableUnit: identifier
+    variableDescription: 'Role: capacity-unit identifier. Definition: One master identifier for shelter record \(j\).
+      Construction: Preserved across all 1,315 geolocated records.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 1315
+  shelter_location:
+    variableNameInDataset: Latitude; Longitude
+    variableNameInArticle: Designated Shelter Geographic Location
+    variableAttribute: other
+    variableUnit: decimal degrees
+    variableDescription: 'Role: spatial service point. Definition: Official latitude and longitude for shelter \(j\).
+      Construction: Preserved from the prefecture-wide shelter inventory.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 1315
+  shelter_municipality:
+    variableNameInDataset: Municipality
+    variableNameInArticle: Shelter Municipality
+    variableAttribute: categorical
+    variableUnit: municipality
+    variableDescription: 'Role: reporting stratum. Definition: Municipality containing shelter \(j\). Construction:
+      Assigned from the master municipality code and checked spatially.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 1315
+  facility_type:
+    variableNameInDataset: Facility Type
+    variableNameInArticle: Shelter Facility Type
+    variableAttribute: categorical
+    variableUnit: facility class
+    variableDescription: 'Role: capacity classifier. Definition: School, public hall, welfare facility, sports facility,
+      or another audited class. Construction: Derived from official identity and facility-name evidence.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 1315
+  shelter_service_class:
+    variableNameInDataset: Shelter Service Class
+    variableNameInArticle: General or Welfare-Specific Shelter
+    variableAttribute: categorical
+    variableUnit: service class
+    variableDescription: 'Role: supply eligibility. Definition: `general` or `welfare_specific`. Construction: Derived
+      from the accepted-persons description; welfare-specific capacity is excluded from unrestricted general supply.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 1315
+  official_numeric_capacity:
+    variableNameInDataset: Official Numeric Capacity
+    variableNameInArticle: Primary Official Shelter Capacity
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: documented capacity. Definition: Published person capacity for source facility \(j\).
+      Construction: Matched to master records with the source definition preserved; duplicate matches must not be
+      summed twice.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 128
+  official_capacity_definition:
+    variableNameInDataset: Official Capacity Definition
+    variableNameInArticle: Meaning of Primary Official Capacity
+    variableAttribute: categorical
+    variableUnit: definition
+    variableDescription: 'Role: metadata. Definition: Source-specific definition such as 3 square meters per person,
+      maximum capacity, or another published basis. Construction: Stored verbatim or as a faithful English description.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 128
+  secondary_official_capacity:
+    variableNameInDataset: Official Secondary Capacity
+    variableNameInArticle: Alternative Published Shelter Capacity
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: sensitivity input. Definition: A second official capacity where the source publishes
+      more than one standard. Construction: Examples include infection-control capacity or a 2-square-meter emergency-place
+      capacity.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 87
+  documented_area:
+    variableNameInDataset: Documented Area (m2)
+    variableNameInArticle: Official Documented Facility Area
+    variableAttribute: continuous
+    variableUnit: square meters
+    variableDescription: 'Role: capacity input. Definition: Published area in square meters associated with shelter
+      \(j\). Construction: Kept only with its area basis; numeric capacity takes priority when both exist.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 218
+  area_basis:
+    variableNameInDataset: Documented Area Basis
+    variableNameInArticle: Meaning of Documented Area
+    variableAttribute: categorical
+    variableUnit: area definition
+    variableDescription: 'Role: metadata. Definition: Gymnasium, indoor arena, gross facility, effective area, or
+      another stated basis. Construction: Prevents gross floor area from being treated automatically as usable accommodation
+      area.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 223
+  earthquake_opening_or_suitability_flag:
+    variableNameInDataset: Official Earthquake Opening or Suitability Flag
+    variableNameInArticle: Source-Specific Earthquake Operability Indicator
+    variableAttribute: boolean
+    variableUnit: indicator or missing
+    variableDescription: 'Role: operability input. Definition: Boolean or missing source flag. Construction: Retains
+      Uki suitability and Yatsushiro opening designations separately from baseline capacity.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 87
+  earthquake_flag_definition:
+    variableNameInDataset: Official Earthquake Flag Definition
+    variableNameInArticle: Meaning of Earthquake Operability Indicator
+    variableAttribute: categorical
+    variableUnit: definition
+    variableDescription: 'Role: metadata. Definition: Source-specific threshold or suitability meaning. Construction:
+      Must accompany the flag in every use.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 128
+  capacity_evidence_tier:
+    variableNameInDataset: Capacity Evidence Tier
+    variableNameInArticle: Shelter Capacity Evidence Grade
+    variableAttribute: ordinal
+    variableUnit: ordered evidence grade
+    variableDescription: 'Role: uncertainty classifier. Definition: A numeric capacity; B gymnasium area; C gross
+      area; D school identity only; E public-facility identity only; F no source link. Construction: Assigned hierarchically
+      so each master shelter has exactly one primary tier.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 1315
+  source_record_id:
+    variableNameInDataset: Official Capacity Source Record ID
+    variableNameInArticle: Official Capacity-Source Record Identifier
+    variableAttribute: categorical
+    variableUnit: identifier
+    variableDescription: 'Role: provenance identifier. Definition: Unique identifier for an extracted official source
+      row. Construction: Links each match back to its municipality table and source URL.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 128
+  source_match_multiplicity:
+    variableNameInDataset: Official Capacity Source Match Multiplicity
+    variableNameInArticle: Number of Master Records Matched to One Source Row
+    variableAttribute: count
+    variableUnit: master shelter records
+    variableDescription: 'Role: deduplication diagnostic. Definition: Count of master shelter records sharing one
+      source record. Construction: Values above one require review before capacity aggregation.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 128
+  must_deduplicate_capacity_before_summation:
+    variableNameInDataset: Official Capacity Must Be Deduplicated
+    variableNameInArticle: Duplicate Capacity Match Flag
+    variableAttribute: boolean
+    variableUnit: indicator
+    variableDescription: 'Role: aggregation safeguard. Definition: Equals 1 when source match multiplicity exceeds
+      one. Construction: Prevents one official facility capacity from being counted multiple times.'
+    variableSource: shelter_capacity_evidence_audit
+    observationNumber: 1315
+  documented_only_general_capacity:
+    variableNameInDataset: Documented-Only General Capacity
+    variableNameInArticle: General-Shelter Capacity without Imputation
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: lower-bound capacity. Definition: Sum of deduplicated official numeric capacity
+      and separately identified confirmed area-derived capacity for general shelters only. Construction: Unsupported
+      shelters receive zero; used as a documented lower bound rather than a complete prefecture estimate.'
+    variableSource: capacity_threshold_results
+    observationNumber: 1
+  standardized_capacity_per_general_shelter:
+    variableNameInDataset: Standardized Capacity per General Shelter
+    variableNameInArticle: Capacity-Threshold Scenario
+    variableAttribute: ordinal
+    variableUnit: persons per open general shelter
+    variableDescription: 'Role: capacity parameter. Definition: \(c \in \{25,50,100,200\}\) persons per open general
+      shelter. Construction: A stress-test parameter, not an assertion of observed facility capacity. Official numeric
+      capacities from 118 general shelters calibrate plausibility.'
+    variableSource: capacity_threshold_results
+    observationNumber: 4
+  minimum_open_shelters_required:
+    variableNameInDataset: Minimum Open Shelters Required
+    variableNameInArticle: Reverse Shelter-Opening Requirement
+    variableAttribute: count
+    variableUnit: shelters
+    variableDescription: 'Role: operational requirement. Definition: \(N_{gs}(c)=\lceil D_{gs}/c \rceil\) for municipality
+      \(g\), scenario \(s\), and threshold \(c\). Construction: Calculated under municipality containment for the
+      first screen; later network assignment may permit reachable cross-boundary service.'
+    variableSource: capacity_threshold_results
+    observationNumber: 180
+  required_capacity_if_all_general_shelters_open:
+    variableNameInDataset: Required Capacity if All General Shelters Open
+    variableNameInArticle: Municipality Capacity Pressure
+    variableAttribute: continuous
+    variableUnit: persons per general shelter
+    variableDescription: 'Role: capacity requirement. Definition: \(c_{gs}^{all}=D_{gs}/J_g\), where \(J_g\) is
+      the number of general shelters in municipality \(g\). Construction: Measures the average capacity each local
+      shelter would need if all were open.'
+    variableSource: capacity_threshold_results
+    observationNumber: 180
+  critical_reverse_capacity:
+    variableNameInDataset: Critical Reverse Capacity
+    variableNameInArticle: Minimum Capacity at the Observed-Total-Anchored Opening Budget
+    variableAttribute: count
+    variableUnit: persons per open general shelter
+    variableDescription: 'Role: primary threshold outcome. Definition: \(c_s^*=\min\{c:\sum_g\lceil D_{gs}/c\rceil\leq415,\
+      \lceil D_{gs}/c\rceil\leq J_g\ \forall g\}\). Construction: Uses 415 as an optimistic general-shelter opening
+      budget anchored to the undifferentiated number open at the largest available observed-use snapshot and retains
+      municipality containment; it is modeled, not observed general-shelter availability or capacity.'
+    variableSource: capacity_threshold_results
+    observationNumber: 4
+  official_capacity_threshold_calibration:
+    variableNameInDataset: Official Capacity Threshold Calibration
+    variableNameInArticle: Share of Documented Shelters Meeting a Threshold
+    variableAttribute: continuous
+    variableUnit: percent
+    variableDescription: 'Role: validity diagnostic. Definition: \(P_c=J_{doc}^{-1}\sum_{j\in J_{doc}}1[C_j^{official}\geq
+      c]\). Construction: Reported for 25, 50, 100, and 200 persons using 118 deduplicated general shelters in Uki,
+      Uto, and Yatsushiro; selection limits are explicit.'
+    variableSource: capacity_threshold_results
+    observationNumber: 4
+  scenario_available_general_shelter_capacity:
+    variableNameInDataset: Scenario-Available General Shelter Capacity
+    variableNameInArticle: Conditional General Shelter Supply
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: capacity. Definition: \(C_{js}^{threshold}=c\times o_{js}\). Construction: Combines
+      a standardized capacity threshold with an explicit opening or operability indicator; welfare-specific shelters
+      remain outside unrestricted supply.'
+    variableSource: capacity_threshold_results
+    observationNumber: 1156
+  demand_walking_network_attachment:
+    variableNameInDataset: Walking Access Road Edge ID; Walking Access Edge Fraction; Walking Network Snap Distance
+      (m)
+    variableNameInArticle: Population-Mesh Centroid Attachment to Pedestrian-Screened Roads
+    variableAttribute: other
+    variableUnit: edge identifier, fraction, and meters
+    variableDescription: 'Role: accessibility input. Definition: Nearest eligible walking edge, normalized edge
+      fraction, connector distance, and recomputed walking-network component for demand mesh \(i\). Construction:
+      National expressways and toll edges are excluded; direct snap is accepted within 250 m in EPSG:6670.'
+    variableSource: walking_network_access_inputs
+    observationNumber: 62945
+  shelter_walking_network_attachment:
+    variableNameInDataset: Walking Access Road Edge ID; Walking Access Edge Fraction; Walking Network Snap Distance
+      (m)
+    variableNameInArticle: General-Shelter Attachment to Pedestrian-Screened Roads
+    variableAttribute: other
+    variableUnit: edge identifier, fraction, and meters
+    variableDescription: 'Role: accessibility input. Definition: Nearest eligible walking edge, normalized edge
+      fraction, connector distance, and recomputed walking-network component for shelter \(j\). Construction: All
+      1,156 general shelters receive an accepted direct road snap within 250 m.'
+    variableSource: walking_network_access_inputs
+    observationNumber: 1315
+  network_walking_time:
+    variableNameInDataset: Nearest General Shelter Walking Time at 4 km/h (min)
+    variableNameInArticle: Door-to-Door Time to the Nearest General Shelter
+    variableAttribute: continuous
+    variableUnit: minutes
+    variableDescription: 'Role: accessibility measure. Definition: \(t_{iv}=60d_i^{nearest}/(1000v)\), where \(v\in\{3,4\}\)
+      km/h. Construction: Includes demand connector, shortest pedestrian-screened road distance, and shelter connector;
+      calculated to 2 km for the 30-minute maximum screen.'
+    variableSource: nearest_shelter_walking_access
+    observationNumber: 62945
+  reachable_within_time_threshold:
+    variableNameInDataset: Reachable within 10, 15, or 30 min at 3 or 4 km/h
+    variableNameInArticle: Nearest General Shelter Reachability Indicator
+    variableAttribute: boolean
+    variableUnit: indicator
+    variableDescription: 'Role: accessibility indicator. Definition: \(a_{ivh}=1[t_{iv}\leq h]\), where \(h\in\{10,15,30\}\)
+      minutes. Construction: Constructed for 3 and 4 km/h without imposing shelter capacity or the 415-opening limit.'
+    variableSource: nearest_shelter_walking_access
+    observationNumber: 62945
+  network_accessibility_coverage:
+    variableNameInDataset: Reachable Demand (%)
+    variableNameInArticle: Scenario Demand within Reach of a General Shelter
+    variableAttribute: continuous
+    variableUnit: percent of scenario demand
+    variableDescription: 'Role: accessibility outcome. Definition: \(G_{svh}=\sum_iD_{is}a_{ivh}/\sum_iD_{is}\).
+      Construction: Reported separately for population, housing-loss demand, and three observed-use stress spatializations.'
+    variableSource: nearest_shelter_walking_access
+    observationNumber: 24
+  capacity_constrained_served_demand:
+    variableNameInDataset: Capacity-Constrained Served Demand
+    variableNameInArticle: Demand Assigned to Reachable General Shelter Capacity
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: service outcome. Definition: \(S_{is}=\sum_j y_{ijs}\). Construction: Final for
+      all three 10,467-person demand spatializations under the primary 50-person, optimistic 415-opening, 15-minute,
+      and 4-km/h assumptions; walking, capacity, and facility-unavailability sensitivities are also complete.'
+    variableSource: capacity_constrained_allocation
+    observationNumber: 62945
+  local_unmet_shelter_demand:
+    variableNameInDataset: Local Unmet Shelter Demand
+    variableNameInArticle: Demand Unserved after Access and Capacity Constraints
+    variableAttribute: continuous
+    variableUnit: persons
+    variableDescription: 'Role: primary gap outcome. Definition: \(U_{is}=D_{is}-\sum_j y_{ijs}\). Construction:
+      Final for the high-loss-weighted primary scenario and separates lack of reachable selected capacity from aggregate
+      prefecture-wide supply.'
+    variableSource: capacity_constrained_allocation
+    observationNumber: 62945
+tableDictionary:
+  table_capacity_evidence_and_threshold_calibration:
+    tableId: table_capacity_evidence_and_threshold_calibration
+    tablePath: data/results/tables/Table_capacity_evidence_and_threshold_calibration.xlsx
+    tableCaption: Shelter capacity evidence and threshold calibration
+    tableAim: Document evidence coverage and assess whether standardized capacity thresholds are plausible.
+    tableExplanation: The inventory contains 1,156 general and 159 welfare-specific shelters. Official numeric capacity
+      is available for 128 records, including 118 general shelters, with a 241-person median. Among the documented
+      general sample, 93.2, 88.1, 80.5, and 66.1 percent meet the 25, 50, 100, and 200-person thresholds. The sample
+      covers only Uki, Uto, and Yatsushiro and does not establish universal observed capacity.
+    tableSuitableSection: 'Methods and results: capacity evidence'
+  table_aggregate_observed_use_and_reverse_capacity_thresholds:
+    tableId: table_aggregate_observed_use_and_reverse_capacity_thresholds
+    tablePath: data/results/tables/Table_aggregate_observed_use_and_reverse_capacity_thresholds.xlsx
+    tableCaption: Observed shelter use and reverse capacity thresholds
+    tableAim: Contrast official aggregate shelter-use snapshots with standardized and reverse capacity requirements.
+    tableExplanation: The four official snapshots contain 4,744 to 10,467 evacuees and 415 to 466 undifferentiated
+      open shelters. At the largest available observation, 25 persons per shelter produces a 92-person aggregate
+      shortfall, whereas 50 persons produces an arithmetic surplus. Municipality-contained reverse critical capacities
+      are 27, 49, and 47 persons for the three equal-total stress spatializations. Aggregate arithmetic omits origins,
+      walking access, and facility-specific operability.
+    tableSuitableSection: 'Results: aggregate and reverse capacity'
+  table_municipality_shelter_opening_and_capacity_pressure:
+    tableId: table_municipality_shelter_opening_and_capacity_pressure
+    tablePath: data/results/tables/Table_municipality_shelter_opening_and_capacity_pressure.xlsx
+    tableCaption: Municipality shelter-opening and capacity pressure
+    tableAim: Summarize prefecture totals and the ten municipalities with the greatest pre-network pressure.
+    tableExplanation: The concise table reports four prefecture summaries and ten high-pressure municipalities;
+      the complete 180-row, 45-municipality scenario grid remains supporting analytical data. At 25 persons, central-
+      and high-loss-weighted scenarios are infeasible in two and three municipalities. Yatsushiro, Uki, and Hikawa
+      show the strongest source-proximate pressure, but the results precede cross-boundary network assignment.
+    tableSuitableSection: 'Results: municipality capacity pressure'
+  table_network_adequacy_and_robustness:
+    tableId: table_network_adequacy_and_robustness
+    tablePath: data/results/tables/Table_network_adequacy_and_robustness.xlsx
+    tableCaption: Network shelter adequacy and robustness
+    tableAim: Consolidate primary, sensitivity, municipality-gap, and screened critical-shelter results.
+    tableExplanation: The primary high-loss-weighted model serves 56.32 percent and leaves 4,572.46 persons unmet.
+      Raising capacity to 100 or 200 persons with at most 415 openings improves service only to about 57.4 percent;
+      30-minute walking at 4 km/h yields an 87.1-percent time-limit lower bound. Targeted facility loss is far more
+      damaging than random loss. Municipality and single-shelter sections are selected summaries, with full analytical
+      outputs retained separately.
+    tableSuitableSection: 'Results: network adequacy and robustness'
+figureDictionary:
+  fig_prefecture_shelter_demand_and_general_shelter_geography:
+    figureId: fig_prefecture_shelter_demand_and_general_shelter_geography
+    figurePath: data/results/figures/Figure_prefecture_shelter_demand_and_general_shelter_geography.png
+    figureCaption: Prefecture shelter demand and general shelter geography
+    figureAim: Compare housing-loss demand and three equal-total observed-use stress spatializations with the general
+      and welfare-specific shelter inventory.
+    figureExplanation: Panel a maps 2,282.7 modeled high housing-loss demand; panels b-d each redistribute the 10,467-person
+      observed-use benchmark by population, central loss, or high loss. The map also distinguishes 1,156 general
+      shelters, 159 welfare-specific shelters, municipality boundaries, and the official hypocenter. Local stress
+      values are modeled alternatives, not observed evacuee origins.
+    figureSuitableSection: 'Results: demand geography and shelter inventory'
+  fig_municipality_reverse_capacity_and_opening_pressure:
+    figureId: fig_municipality_reverse_capacity_and_opening_pressure
+    figurePath: data/results/figures/Figure_municipality_reverse_capacity_and_opening_pressure.png
+    figureCaption: Municipality capacity and shelter-opening pressure
+    figureAim: Show pre-network municipality capacity requirements and the critical standardized capacity under
+      the optimistic 415-opening budget.
+    figureExplanation: Under the high-loss-weighted stress scenario, Yatsushiro requires about 47 persons per shelter
+      if all local general shelters open, while Uki requires 31 of 37 local shelters at the 50-person threshold.
+      Across modeled spatializations, critical reverse capacity ranges from 27 to 49 persons, with 47 persons for
+      the primary high-loss geography. These are municipality-contained reverse requirements before walking constraints.
+    figureSuitableSection: 'Results: reverse capacity and opening requirements'
+  fig_network_walking_access_and_geographic_gaps:
+    figureId: fig_network_walking_access_and_geographic_gaps
+    figurePath: data/results/figures/Figure_network_walking_access_and_geographic_gaps.png
+    figureCaption: Walking access to general shelters across Kumamoto Prefecture
+    figureAim: Locate populated meshes with and without a reachable general shelter under walking-speed and time-threshold
+      assumptions.
+    figureExplanation: At 4 km/h, population coverage rises from 40.4 percent within 10 minutes to 67.2 percent
+      within 15 minutes and 92.4 percent within 30 minutes; high-loss-weighted stress-demand coverage is 34.5, 60.1,
+      and 91.6 percent. At 3 km/h and 15 minutes, coverage falls to 48.0 percent of population and 41.3 percent
+      of high-stress demand. These values precede shelter capacity and opening limits.
+    figureSuitableSection: 'Results: geographic accessibility'
+  fig_capacity_constrained_service_gaps_at_50_persons:
+    figureId: fig_capacity_constrained_service_gaps_at_50_persons
+    figurePath: data/results/figures/Figure_capacity_constrained_service_gaps_at_50_persons.png
+    figureCaption: Capacity-constrained shelter service gaps across demand spatializations
+    figureAim: Compare spatial service after jointly imposing 15-minute reachability, 50-person capacity, and at
+      most 415 openings.
+    figureExplanation: The model serves 62.6 percent of population-weighted demand, 62.0 percent of central-loss-weighted
+      demand, and 56.3 percent of high-loss-weighted demand. The primary high-loss geography leaves 4,572.5 of 10,467
+      persons unmet. Mesh-level served and unserved locations describe one optimized allocation, while municipality
+      and aggregate summaries are the primary location-specific evidence.
+    figureSuitableSection: 'Results: capacity-constrained adequacy'
+  fig_threshold_and_facility_unavailability_robustness:
+    figureId: fig_threshold_and_facility_unavailability_robustness
+    figurePath: data/results/figures/Figure_threshold_and_facility_unavailability_robustness.png
+    figureCaption: Shelter capacity and facility-loss robustness
+    figureAim: Test whether the adequacy result changes with capacity, opening scale, facility unavailability, and
+      screened single-shelter loss.
+    figureExplanation: Higher capacity reduces unmet demand but cannot exceed the 15-minute geographic ceiling,
+      and the 415-opening limit remains binding. Random loss of 10, 20, and 30 percent of shelters produces mean
+      served shares of 54.0, 51.2, and 47.7 percent, whereas pressure-targeted loss reduces them to 37.2, 19.2,
+      and 11.5 percent. Single-shelter losses cover only the 30 highest-pressure facilities, so lower-pressure local
+      criticality remains untested.
+    figureSuitableSection: 'Results: robustness and facility criticality'
+analysisStructureBrief:
+  overview: The analysis moves from official aggregate-use evidence and alternative small-area demand spatializations
+    to reverse capacity requirements, pedestrian-network accessibility, capacity-constrained shelter assignment,
+    and facility-loss robustness. It separates observed prefecture totals from modeled local demand and reports
+    conditional adequacy rather than actual event operations.
+  levels:
+  - levelName: Demand scenario construction
+    levelAim: Create comparable prefecture-wide shelter-demand geographies without inventing observed local origins.
+    inputs:
+    - Residential Population
+    - Housing-Loss Shelter Demand Central
+    - Housing-Loss Shelter Demand High
+    - Reported Evacuees
+    - Municipality
+    - Epicentral Distance
+    modelOrMethod: For each weighting variable w_i, construct D_i = O * w_i / sum_r(w_r), where O is the largest
+      available reported aggregate use, 10,467. Preserve the unscaled low, central, and high housing-loss estimates
+      as contextual bounds.
+    outputs:
+    - Prefecture Shelter Demand and General Shelter Geography
+    - Aggregate Observed-Use and Reverse Capacity Thresholds
+    interpretation: Each spatialization preserves the same prefecture total and tests a plausible residential geography.
+      None identifies the observed municipality or residence of actual evacuees, and the four reports are discrete
+      snapshots rather than a continuous time series.
+  - levelName: Capacity evidence and reverse requirements
+    levelAim: Assess capacity adequacy without inventing unsupported facility areas or capacities.
+    inputs:
+    - Shelter Service Class
+    - Official Numeric Capacity
+    - Capacity Evidence Tier
+    - Standardized Capacity per General Shelter
+    - Open Shelters
+    - Municipality
+    modelOrMethod: For municipality g and scenario s, compute N_gs(c) = ceil(D_gs / c) and c_gs_all = D_gs / J_g
+      for c in {25, 50, 100, 200}. Critical capacity is the smallest c satisfying sum_g N_gs(c) <= 415 and N_gs(c)
+      <= J_g for every g.
+    outputs:
+    - Capacity Evidence and Threshold Calibration
+    - Municipality Reverse Capacity and Opening Pressure
+    - Aggregate Observed-Use and Reverse Capacity Thresholds
+    - Municipality Shelter Opening and Capacity Pressure
+    interpretation: The 50-person primary value is a calibrated stress threshold, not a universal observed capacity.
+      The 415 limit is an optimistic budget anchored to an official count that does not distinguish general from
+      welfare-specific shelters. Reverse requirements precede network constraints.
+  - levelName: Pedestrian-network accessibility
+    levelAim: Measure whether residents can reach at least one general shelter under explicit walking assumptions.
+    inputs:
+    - Demand Walking-Network Attachment
+    - Shelter Walking-Network Attachment
+    - Network Walking Time
+    - Reachable within Time Threshold
+    - Residential Population
+    - Shelter Service Class
+    modelOrMethod: Compute door-to-door time t_ijv = 60 * (demand connector + shortest network distance + shelter
+      connector) / (1000 * v). Define a_ijvh = 1 when t_ijv <= h, for v in {3, 4} km/h and h in {10, 15, 30} minutes,
+      then calculate demand-weighted reachability coverage.
+    outputs:
+    - Network Walking Access and Geographic Gaps
+    - Network Adequacy and Robustness
+    interpretation: Reachability measures geographic opportunity before capacity and opening limits. The graph excludes
+      expressways and toll edges but does not delete edges from motor-vehicle restriction records because pedestrian
+      failure is not identified.
+  - levelName: Capacity-constrained facility selection and allocation
+    levelAim: Estimate maximum shelter service when reachability, capacity, and opening constraints apply together.
+    inputs:
+    - Observed-Use Stress Demand High Housing-Loss Weighted
+    - Scenario-Available General Shelter Capacity
+    - Network Walking Time
+    - Standardized Capacity per General Shelter
+    - Capacity-Constrained Served Demand
+    - Local Unmet Shelter Demand
+    modelOrMethod: Use a lexicographic mixed-integer model. Stage 1 maximizes sum_ij y_ij; stage 2 minimizes sum_j
+      z_j conditional on maximum service; stage 3 minimizes sum_ij t_ij*y_ij conditional on the earlier targets.
+      Constraints require sum_j y_ij <= D_i, sum_i y_ij <= c*z_j, unreachable flows equal zero, and sum_j z_j <=
+      415.
+    outputs:
+    - Capacity-Constrained Service Gaps at 50 Persons
+    - Network Adequacy and Robustness
+    interpretation: The primary model serves 5,894.54 of 10,467 persons and leaves 4,572.46 unmet. Maximum service
+      and 415 openings are proven optimal; distance is exact only conditional on the selected stage-two opening
+      set. Mesh allocations represent one optimum, not observed facility use.
+  - levelName: Threshold and facility-loss robustness
+    levelAim: Determine whether the adequacy conclusion depends on capacity, walking, demand geography, or facility
+      availability.
+    inputs:
+    - Standardized Capacity per General Shelter
+    - Scenario-Available General Shelter Capacity
+    - Capacity-Constrained Served Demand
+    - Local Unmet Shelter Demand
+    - Shelter Location
+    modelOrMethod: Re-solve the service model across 25, 50, 100, and 200 persons, multiple walking speeds and thresholds,
+      three demand geographies, 30 random draws for each 10, 20, and 30 percent removal share, pressure-targeted
+      removals, and single removal of each of the 30 highest-pressure shelters. Failure loss is L_j = U_without_j
+      - U_baseline.
+    outputs:
+    - Threshold and Facility-Unavailability Robustness
+    - Network Adequacy and Robustness
+    interpretation: Random removal summarizes sensitivity rather than probability, and targeted removal is a concentration
+      stress test. Single-shelter results are confirmed lower bounds for a screened set, not an exhaustive criticality
+      ranking; some time-limited scenarios are reported as lower bounds.
+  - levelName: Decision interpretation and scope boundary
+    levelAim: Translate modeled gaps into defensible planning evidence and define when supplementary sites warrant
+      study.
+    inputs:
+    - Local Unmet Shelter Demand
+    - Network Walking Time
+    - Municipality
+    - Capacity Evidence Tier
+    modelOrMethod: Compare aggregate, municipality, and mesh results across plausible scenarios. Treat persistent
+      deficits as planning signals and consider supplementary sites only where geographic or capacity gaps survive
+      the primary and sensitivity analyses.
+    outputs:
+    - All five figures and four tables
+    - Supporting analytical data for all 45 municipalities
+    interpretation: Conditional sufficiency does not prove that shelters were safe, staffed, supplied, unlocked,
+      acceptable, or actually open. The present outputs evaluate the existing designated shelter system; supplementary
+      open-space analysis is a later conditional response, not part of the current adequacy estimand.
