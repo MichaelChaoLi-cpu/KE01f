@@ -172,11 +172,11 @@ def style_workbook(path: Path) -> None:
     workbook = load_workbook(path)
     worksheet = workbook[SHEET_NAME]
     worksheet.sheet_view.showGridLines = False
-    worksheet.freeze_panes = "A3"
-    worksheet.auto_filter.ref = f"A2:J{worksheet.max_row}"
+    worksheet.freeze_panes = "A2"
+    worksheet.auto_filter.ref = f"A1:J{worksheet.max_row}"
     worksheet.sheet_view.zoomScale = 85
     worksheet.print_area = f"A1:J{worksheet.max_row}"
-    worksheet.print_title_rows = "1:2"
+    worksheet.print_title_rows = "1:1"
     worksheet.page_setup.orientation = "landscape"
     worksheet.page_setup.paperSize = worksheet.PAPERSIZE_A3
     worksheet.page_setup.fitToWidth = 1
@@ -191,30 +191,22 @@ def style_workbook(path: Path) -> None:
         footer=0.15,
     )
 
-    worksheet.merge_cells("A1:J1")
-    title = worksheet["A1"]
-    title.value = TABLE_TITLE
-    title.fill = PatternFill("solid", fgColor="D9EAF7")
-    title.font = Font(name="Aptos Display", size=15, bold=True, color="17365D")
-    title.alignment = Alignment(horizontal="left", vertical="center")
-    worksheet.row_dimensions[1].height = 28
-
     header_fill = PatternFill("solid", fgColor="17365D")
     header_font = Font(name="Aptos", size=10, bold=True, color="FFFFFF")
     body_font = Font(name="Aptos", size=9, color="172033")
     thin_border = Border(bottom=Side(style="thin", color="D0D5DD"))
-    for cell in worksheet[2]:
+    for cell in worksheet[1]:
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    worksheet.row_dimensions[2].height = 52
+    worksheet.row_dimensions[1].height = 52
 
     group_fills = {
         "Evidence tier": "EAF2F8",
         "Service-class calibration": "E8F3EC",
         "Threshold plausibility": "FFF1D6",
     }
-    for row in worksheet.iter_rows(min_row=3, max_row=worksheet.max_row):
+    for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
         group = str(row[0].value)
         for cell in row:
             cell.font = body_font
@@ -247,7 +239,7 @@ def style_workbook(path: Path) -> None:
     for column, width in widths.items():
         worksheet.column_dimensions[column].width = width
 
-    table = Table(displayName="CapacityEvidenceCalibration", ref=f"A2:J{worksheet.max_row}")
+    table = Table(displayName="CapacityEvidenceCalibration", ref=f"A1:J{worksheet.max_row}")
     table.tableStyleInfo = TableStyleInfo(
         name="TableStyleMedium2",
         showFirstColumn=False,
@@ -262,12 +254,14 @@ def style_workbook(path: Path) -> None:
 def verify_workbook(path: Path) -> None:
     workbook = load_workbook(path, data_only=False)
     worksheet = workbook[SHEET_NAME]
-    if worksheet.max_row != 14 or worksheet.max_column != 10:
+    if worksheet.max_row != 13 or worksheet.max_column != 10:
         raise RuntimeError(
             f"Unexpected workbook dimensions: {worksheet.max_row} rows × {worksheet.max_column} columns."
         )
-    if worksheet.freeze_panes != "A3":
-        raise RuntimeError("Expected frozen title/header rows at A3.")
+    if worksheet.freeze_panes != "A2":
+        raise RuntimeError("Expected the header row to be frozen at A2.")
+    if worksheet.merged_cells.ranges:
+        raise RuntimeError("Merged cells are not permitted in article-facing tables.")
     formula_errors = {"#REF!", "#DIV/0!", "#VALUE!", "#NAME?", "#N/A"}
     for row in worksheet.iter_rows():
         for cell in row:
@@ -279,7 +273,7 @@ def main() -> None:
     table = build_table()
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with pd.ExcelWriter(OUTPUT_PATH, engine="openpyxl") as writer:
-        table.to_excel(writer, sheet_name=SHEET_NAME, index=False, startrow=1)
+        table.to_excel(writer, sheet_name=SHEET_NAME, index=False)
     style_workbook(OUTPUT_PATH)
     verify_workbook(OUTPUT_PATH)
     print(f"Saved {OUTPUT_PATH}")

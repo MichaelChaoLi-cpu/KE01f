@@ -1,5 +1,5 @@
 doc_type: actionbrief
-version: 1.0.0
+version: 1.1.0
 datasetDictionary:
   population_census_2020:
     datasetSourceName: 2020 Population Census T001231 and e-Stat Kumamoto mesh geography
@@ -714,6 +714,12 @@ figureDictionary:
       shelters, 159 welfare-specific shelters, municipality boundaries, and the official hypocenter. Local stress
       values are modeled alternatives, not observed evacuee origins.
     figureSuitableSection: 'Results: demand geography and shelter inventory'
+    figurePanelCount: 4
+    figureNote: Panel a maps modeled high housing-loss shelter demand. Panel b maps the population-weighted observed-use
+      stress scenario. Panel c maps the central-loss-weighted observed-use stress scenario. Panel d maps the high-loss-weighted
+      observed-use stress scenario. All panels show general shelters, welfare-specific shelters, municipality boundaries,
+      and the official hypocenter; the three stress maps redistribute an equal prefecture-wide total and do not represent
+      observed evacuee origins.
   fig_municipality_reverse_capacity_and_opening_pressure:
     figureId: fig_municipality_reverse_capacity_and_opening_pressure
     figurePath: data/results/figures/Figure_municipality_reverse_capacity_and_opening_pressure.png
@@ -725,6 +731,12 @@ figureDictionary:
       Across modeled spatializations, critical reverse capacity ranges from 27 to 49 persons, with 47 persons for
       the primary high-loss geography. These are municipality-contained reverse requirements before walking constraints.
     figureSuitableSection: 'Results: reverse capacity and opening requirements'
+    figurePanelCount: 3
+    figureNote: Panel a maps the average capacity required when every local general shelter opens under the high-loss-weighted
+      stress scenario. Panel b maps the minimum number of local general shelters that must open at 50 persons per shelter.
+      Panel c compares the critical capacity per open shelter across the modeled housing-loss and observed-use stress
+      scenarios against the 50-person primary threshold. These are municipality-contained calculations made before
+      walking-network constraints.
   fig_network_walking_access_and_geographic_gaps:
     figureId: fig_network_walking_access_and_geographic_gaps
     figurePath: data/results/figures/Figure_network_walking_access_and_geographic_gaps.png
@@ -736,6 +748,11 @@ figureDictionary:
       and 91.6 percent. At 3 km/h and 15 minutes, coverage falls to 48.0 percent of population and 41.3 percent
       of high-stress demand. These values precede shelter capacity and opening limits.
     figureSuitableSection: 'Results: geographic accessibility'
+    figurePanelCount: 4
+    figureNote: Panel a maps populated meshes with or without a reachable general shelter within 10 minutes at 4 km/h.
+      Panel b applies a 15-minute threshold at 4 km/h. Panel c applies a 30-minute threshold at 4 km/h. Panel d applies
+      the mobility-constrained sensitivity of 15 minutes at 3 km/h. Every panel reports population and high-loss-weighted
+      demand coverage before shelter capacity and opening limits are imposed.
   fig_capacity_constrained_service_gaps_at_50_persons:
     figureId: fig_capacity_constrained_service_gaps_at_50_persons
     figurePath: data/results/figures/Figure_capacity_constrained_service_gaps_at_50_persons.png
@@ -747,6 +764,11 @@ figureDictionary:
       persons unmet. Mesh-level served and unserved locations describe one optimized allocation, while municipality
       and aggregate summaries are the primary location-specific evidence.
     figureSuitableSection: 'Results: capacity-constrained adequacy'
+    figurePanelCount: 3
+    figureNote: Panel a maps fully served, partly served, and unserved demand under the population-weighted stress
+      scenario. Panel b maps the same allocation outcomes under the central-loss-weighted stress scenario. Panel c
+      maps the primary high-loss-weighted stress scenario. All panels impose a 15-minute walking threshold, 50-person
+      capacity per open general shelter, and a maximum of 415 openings.
   fig_threshold_and_facility_unavailability_robustness:
     figureId: fig_threshold_and_facility_unavailability_robustness
     figurePath: data/results/figures/Figure_threshold_and_facility_unavailability_robustness.png
@@ -759,6 +781,12 @@ figureDictionary:
       and 11.5 percent. Single-shelter losses cover only the 30 highest-pressure facilities, so lower-pressure local
       criticality remains untested.
     figureSuitableSection: 'Results: robustness and facility criticality'
+    figurePanelCount: 4
+    figureNote: Panel a compares unmet high-loss-weighted demand across standardized capacity thresholds with and
+      without the 415-opening limit and against the 15-minute geographic lower bound. Panel b compares random and
+      pressure-targeted shelter unavailability at 10, 20, and 30 percent. Panel c maps service-loss lower bounds for
+      the 30 screened high-pressure single-shelter removals. Panel d ranks the ten largest confirmed single-shelter
+      service losses. The single-site results do not establish criticality for unscreened lower-pressure shelters.
 analysisStructureBrief:
   overview: The analysis moves from official aggregate-use evidence and alternative small-area demand spatializations
     to reverse capacity requirements, pedestrian-network accessibility, capacity-constrained shelter assignment,
