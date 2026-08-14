@@ -102,12 +102,19 @@ def main() -> None:
         max(30, int((worksheet.row_dimensions[row].height or 22) * 1.65))
         for row in row_numbers
     ]
+    first_row_is_merged_title = any(
+        merged.min_row == 1
+        and merged.max_row == 1
+        and merged.min_col == 1
+        and merged.max_col == worksheet.max_column
+        for merged in worksheet.merged_cells.ranges
+    )
     image = Image.new("RGB", (sum(column_widths) + 2, sum(row_heights) + 2), "#FFFFFF")
     draw = ImageDraw.Draw(image)
 
     y = 1
     for row_number, row_height in zip(row_numbers, row_heights):
-        if row_number == 1:
+        if row_number == 1 and first_row_is_merged_title:
             cell = worksheet.cell(row=1, column=1)
             row_width = sum(column_widths)
             background = excel_color(cell)
@@ -137,12 +144,13 @@ def main() -> None:
                 width=1,
             )
             value = formatted_value(cell)
-            size = 16 if row_number == 2 else 14
-            text_font = font(size, bool(cell.font.bold) or row_number == 2)
+            is_header = row_number == (2 if first_row_is_merged_title else 1)
+            size = 16 if is_header else 14
+            text_font = font(size, bool(cell.font.bold) or is_header)
             lines = wrap_text(draw, value, text_font, max(15, column_width - 12))
             line_height = int(size * 1.22)
             total_height = len(lines) * line_height
-            if row_number <= 2:
+            if is_header or (first_row_is_merged_title and row_number == 1):
                 text_y = y + max(5, (row_height - total_height) // 2)
             else:
                 text_y = y + 6
@@ -151,7 +159,7 @@ def main() -> None:
                 line_width = draw.textlength(line, font=text_font)
                 if alignment == "right":
                     text_x = x + column_width - line_width - 6
-                elif alignment == "center" or row_number == 2:
+                elif alignment == "center" or is_header:
                     text_x = x + (column_width - line_width) / 2
                 else:
                     text_x = x + 6

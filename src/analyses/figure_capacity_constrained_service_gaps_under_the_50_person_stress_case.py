@@ -1,4 +1,4 @@
-"""Map capacity-constrained service gaps under the 50-person threshold."""
+"""Map explanation gaps under the conservative 50-person walking rules."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ PRIMARY_OPENINGS_PATH = (
 )
 OUTPUT_PATH = (
     ROOT
-    / "data/results/figures/Figure_capacity_constrained_service_gaps_at_50_persons.png"
+    / "data/results/figures/Figure_capacity_constrained_service_gaps_under_the_50_person_stress_case.png"
 )
 
 CAPACITY_PER_SHELTER = 50.0
@@ -303,8 +303,8 @@ def main() -> None:
         demand_values = demand[demand_column].to_numpy(float)
         served_by_mesh, open_shelters, served_total = allocations[scenario]
         total_demand = float(demand_values.sum())
-        unmet_total = total_demand - served_total
-        served_percent = 100 * served_total / total_demand
+        explanation_gap = total_demand - served_total
+        assigned_percent = 100 * served_total / total_demand
 
         ax.add_collection(
             PolyCollection(
@@ -358,7 +358,7 @@ def main() -> None:
         ax.text(
             0.982,
             0.025,
-            f"Served {served_percent:.1f}%  |  Unmet {unmet_total:,.1f}",
+            f"Assigned {assigned_percent:.1f}%  |  Explanation gap {explanation_gap:,.0f}",
             transform=ax.transAxes,
             ha="right",
             va="bottom",
@@ -382,9 +382,9 @@ def main() -> None:
             add_scale_bar(ax, mean_latitude)
 
     legend_handles = [
-        Patch(facecolor=FULLY_SERVED_COLOR, edgecolor="none", label="Demand fully served"),
-        Patch(facecolor=PARTLY_SERVED_COLOR, edgecolor="none", label="Demand partly served"),
-        Patch(facecolor=UNSERVED_COLOR, edgecolor="none", label="Demand unserved"),
+        Patch(facecolor=FULLY_SERVED_COLOR, edgecolor="none", label="Stress demand fully assigned"),
+        Patch(facecolor=PARTLY_SERVED_COLOR, edgecolor="none", label="Stress demand partly assigned"),
+        Patch(facecolor=UNSERVED_COLOR, edgecolor="none", label="Stress demand outside modeled assignment"),
         Line2D(
             [0],
             [0],

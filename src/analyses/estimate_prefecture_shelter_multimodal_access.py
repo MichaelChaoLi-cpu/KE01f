@@ -34,9 +34,9 @@ WALKING_ACCESS_PATH = (
     ROOT
     / "data/processed/kumamoto_prefecture_nearest_shelter_walking_access_preprocessed.parquet"
 )
-PROCESSED_OUTPUT = (
+CORRECTED_ACCESS_OUTPUT = (
     ROOT
-    / "data/processed/kumamoto_prefecture_nearest_shelter_motorized_access_preprocessed.parquet"
+    / "data/exp/prefecture-shelter-multimodal-access/nearest_shelter_motorized_access_corrected.parquet"
 )
 OUT = ROOT / "data/exp/prefecture-shelter-multimodal-access"
 
@@ -155,8 +155,15 @@ def nearest_motorized_time(
     )
     for node, cost in source_cost.items():
         graph.add_edge(SUPER_SOURCE, node, weight=float(cost))
+
+    def scaled_weight(_from: str, _to: str, attributes: dict[str, float]) -> float:
+        """Apply the speed factor to every in-network road edge."""
+        if _from == SUPER_SOURCE or _to == SUPER_SOURCE:
+            return float(attributes["weight"])
+        return float(attributes["weight"]) / speed_factor
+
     distances = nx.single_source_dijkstra_path_length(
-        graph, SUPER_SOURCE, weight="weight"
+        graph, SUPER_SOURCE, weight=scaled_weight
     )
     graph.remove_node(SUPER_SOURCE)
 
@@ -196,7 +203,7 @@ def weighted_percent(values: pd.Series, reachable: np.ndarray) -> float:
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    PROCESSED_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    CORRECTED_ACCESS_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
     edges, graph = load_edges()
     demand = pd.read_parquet(DEMAND_PATH).reset_index(drop=True)
@@ -240,14 +247,18 @@ def main() -> None:
             }
         )
 
+    times_by_factor: dict[float, np.ndarray] = {}
+    reachable_by_factor: dict[tuple[float, int], np.ndarray] = {}
     for speed_factor in SPEED_FACTORS:
         times = nearest_motorized_time(
             edges, graph, demand, shelters, speed_factor
         )
+        times_by_factor[speed_factor] = times
         time_column = f"Nearest General Shelter Motorized Time at {speed_factor:.2f}x (min)"
         result[time_column] = np.where(np.isfinite(times), times, np.nan)
         for threshold in TIME_THRESHOLDS_MIN:
             reachable = times <= threshold
+            reachable_by_factor[(speed_factor, threshold)] = reachable
             result[
                 f"Reachable within {threshold} min at {speed_factor:.2f}x Motorized Speed"
             ] = reachable
@@ -268,6 +279,29 @@ def main() -> None:
                     }
                 )
 
+    finite_all = np.logical_and.reduce(
+        [np.isfinite(times_by_factor[factor]) for factor in SPEED_FACTORS]
+    )
+    tolerance = 1e-9
+    if not np.all(
+        times_by_factor[0.25][finite_all] + tolerance
+        >= times_by_factor[0.50][finite_all]
+    ):
+        raise RuntimeError("Motorized times are not monotonic from 0.25x to 0.50x")
+    if not np.all(
+        times_by_factor[0.50][finite_all] + tolerance
+        >= times_by_factor[1.00][finite_all]
+    ):
+        raise RuntimeError("Motorized times are not monotonic from 0.50x to 1.00x")
+    for threshold in TIME_THRESHOLDS_MIN:
+        severe = reachable_by_factor[(0.25, threshold)]
+        central = reachable_by_factor[(0.50, threshold)]
+        baseline = reachable_by_factor[(1.00, threshold)]
+        if np.any(severe & ~central) or np.any(central & ~baseline):
+            raise RuntimeError(
+                f"Motorized reachable sets are not nested at {threshold} minutes"
+            )
+
     central_motor = result[
         "Reachable within 15 min at 0.50x Motorized Speed"
     ].to_numpy(bool)
@@ -275,7 +309,7 @@ def main() -> None:
     result["Walking Reachable in Central Comparison"] = walking_reachable
     result["Motorized Reachable in Central Comparison"] = central_motor
     result["Mode-Flexible Reachable in Central Comparison"] = mode_flexible
-    result.to_parquet(PROCESSED_OUTPUT, index=False)
+    result.to_parquet(CORRECTED_ACCESS_OUTPUT, index=False)
 
     pd.DataFrame(summary_rows).to_csv(
         OUT / "walking_and_motorized_accessibility_summary.csv", index=False
@@ -328,14 +362,15 @@ def main() -> None:
     readme = OUT / "README.md"
     readme.write_text(
         "# Multimodal shelter-accessibility sensitivity\n\n"
-        "Motorized road times use the existing road-class baseline edge travel times "
-        "multiplied by 0.25, 0.50, or 1.00 speed factors. Off-network connectors are "
+        "Motorized road times divide every traversed road edge's baseline travel time "
+        "by speed factors of 0.25, 0.50, or 1.00. Off-network connectors are "
         "walked at 4 km/h. The central comparison uses 0.50 of baseline road speed and "
         "a 15-minute threshold. Vehicle-enabled demand shares from 0 to 1 are scenario "
         "bounds, not observed travel-mode estimates. Vehicle-enabled demand may use the "
         "union of walking and motorized catchments.\n",
         encoding="utf-8",
     )
+    print(f"Saved: {CORRECTED_ACCESS_OUTPUT.relative_to(ROOT)}")
     print(mixed.to_string(index=False))
     central_summary = pd.DataFrame(summary_rows)
     print(

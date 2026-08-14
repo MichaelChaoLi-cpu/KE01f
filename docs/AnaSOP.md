@@ -7,11 +7,11 @@ Analysis Standard Operating Procedure
 
 - Research question: Following the 28 July 2026 earthquake, how much of an official-total-scaled shelter stress load can Kumamoto Prefecture's designated general-shelter system explain under walking, motorized, and mixed-mode accessibility bounds, and whether accessibility, deployable capacity, or facility availability is the binding planning constraint?
 - Why it matters: The official aggregate of 10,467 shelter users establishes that evacuation occurred but does not identify residential origins, travel modes, or assigned facilities. A model that reaches fewer than 10,467 people under a 15-minute walking rule therefore identifies the limit of that planning rule, not the number of people actually refused shelter.
-- Data support currently visible: Prefecture-wide evidence includes 62,945 populated 125 m meshes, 36,657 disclosure-group demand units, 1,315 geolocated designated shelters across 45 municipalities, four official aggregate event-use snapshots, and a road network with road-class baseline travel times. All 1,156 general shelters and virtually all residential population are attached to the network. Official numeric capacities for 118 general shelters calibrate 25-, 50-, 100-, and 200-person scenarios. Under the high-loss-weighted stress geography, 15-minute walking reaches 60.1 percent of the load, whereas the central low-speed motorized benchmark reaches 99.7 percent.
+- Data support currently visible: Prefecture-wide evidence includes 62,945 populated 125 m meshes, 36,657 disclosure-group demand units, 1,315 geolocated designated shelters across 45 municipalities, four official aggregate event-use snapshots, and a road network with road-class baseline travel times. All 1,156 general shelters and virtually all residential population are attached to the network. Official numeric capacities for 118 general shelters calibrate 25-, 50-, 100-, and 200-person scenarios. Under the high-loss-weighted stress geography, 15-minute walking reaches 60.1 percent of the load, whereas the corrected central low-speed motorized benchmark reaches 99.0 percent.
 - Key readable variables or data scope: Reported Evacuees; three observed-total-scaled stress geographies; Standardized Capacity per General Shelter; Network Walking Time; Network Motorized Time; Vehicle-Enabled Demand Share; Mixed-Mode Accessibility Coverage; Capacity-Constrained Served Demand; Model Explanation Gap; Municipality; facility availability.
 - What would verify it: Accessibility coverage and capacity-constrained assignment change materially across mode-availability assumptions but only modestly across plausible capacity thresholds, with explicit municipality and facility-loss evidence locating the remaining planning gaps.
 - What would falsify or weaken it: An accessibility-binding interpretation would weaken if higher standardized capacity closes most of the walking-based gap, if motorized or mixed-mode access changes little, or if findings depend on one unsupported demand spatialization or one facility-loss realization.
-- Required next feasibility check: Complete the motorized and mixed-mode capacity screen, regenerate the accessibility and robustness outputs, and retain the 50-person walking allocation as a conservative stress case rather than the central adequacy estimate.
+- Required next feasibility check: Completed. Corrected accessibility bounds, the central shared-capacity comparison, the all-shelter opening-scale contrast, and mixed-pressure targeted facility-loss tests are all available with explicit solver qualifications.
 
 ### Supporting Research Questions
 
@@ -44,7 +44,7 @@ The plan contains one central question and four supporting questions.
 - Role relative to central point: spatial accessibility and municipal heterogeneity
 - Research question: How do walking, motorized, and mixed-mode access assumptions change the share and geography of stress demand that can reach at least one general shelter?
 - Why it matters: Capacity in Kumamoto City or another municipality may be too distant or operationally irrelevant to residents near the hypocenter, on islands, or in sparsely connected rural areas.
-- Data support currently visible: Population meshes, all general shelter locations, road-class baseline travel times, direct network attachments, and administrative areas support connector-inclusive walking and motorized shortest paths. At 15 minutes, walking reaches 60.1 percent of high-loss-weighted stress demand; the central motorized benchmark reaches 99.7 percent. Mixed-mode accessibility increases monotonically from 60.1 to 99.7 percent as the vehicle-enabled demand share rises from zero to one.
+- Data support currently visible: Population meshes, all general shelter locations, road-class baseline travel times, direct network attachments, and administrative areas support connector-inclusive walking and motorized shortest paths. At 15 minutes, walking reaches 60.1 percent of high-loss-weighted stress demand; the corrected central motorized benchmark reaches 99.0 percent. Mixed-mode accessibility increases monotonically from 60.1 to 99.0 percent as the vehicle-enabled demand share rises from zero to one.
 - Key readable variables or data scope: Network Walking Time; Network Motorized Time; Motorized Speed Factor; Vehicle-Enabled Demand Share; Mixed-Mode Accessibility Coverage; Municipality; Shelter Location.
 - What would verify it: Mode assumptions change accessibility materially, results remain monotonic under speed and vehicle-share sensitivity, and remaining gaps can be located without relabeling scenario assignments as observed travel.
 - What would falsify or weaken it: Results would be weak if shelters or demand nodes cannot be attached reliably, cross-municipality walking is modeled unrealistically, or island and disconnected-network limitations are ignored.
@@ -260,16 +260,18 @@ The table uses readable, article-facing variable names. Each row states the vari
 
 ## 5. Identification Strategy
 
-- Design principle: This is an applied partial-identification and scenario-based accessibility assessment. It does not reconstruct actual evacuation or estimate an unobserved factual capacity for every shelter. The analysis compares what the designated-shelter system can explain under explicit walking, motorized, mixed-mode, capacity, opening, and facility-availability rules.
-- Demand identification: The largest available official aggregate observation, 10,467 Reported Evacuees, scales three counterfactual residential stress surfaces using Residential Population, Housing-Loss Shelter Demand Central, and Housing-Loss Shelter Demand High. The official count is an observed aggregate reference, while all mesh and municipality values are modeled alternatives. The unscaled housing-loss estimates remain contextual displacement inputs.
-- Capacity identification: Standardized Capacity per General Shelter is 100 persons in the central capacity scenario, 50 persons is a conservative stress case, and 25 and 200 persons bound lower and upper sensitivity. Official Numeric Capacity from 118 deduplicated general shelters supplies plausibility calibration only. Welfare-specific shelters remain outside unrestricted general-population supply.
-- Reverse-requirement contrast: Aggregate and municipality-contained calculations identify Minimum Open Shelters Required, Required Capacity if All General Shelters Open, and Critical Reverse Capacity before routing. This distinguishes an implausible capacity requirement from a shortage caused by geographic reachability.
-- Access identification: The 15-minute, 4-km/h walking case is the restrictive lower accessibility bound. Motorized road time uses existing road-class baseline travel time multiplied by Motorized Speed Factor, with 0.50 as the central low-speed benchmark and 0.25 and 1.00 as sensitivity. Off-network connectors are traversed at 4 km/h. Vehicle-Enabled Demand Share ranges from zero to one and creates mixed-mode accessibility bounds without estimating actual travel-mode choice.
-- Facility-selection and allocation principle: At most 415 general shelters may open in the constrained stress allocation. This optimistic budget is anchored to the official undifferentiated total of open shelters, not an observed list of open general shelters. The lexicographic model maximizes assigned stress demand, minimizes openings, and then minimizes travel impedance. The returned opening set is one modeled solution rather than a reconstruction of actual operations.
-- Robustness identification: Capacity thresholds, demand spatialization, walking speed, time threshold, and 0, 10, 20, and 30 percent facility unavailability are varied. Random unavailability is summarized across reproducible draws; targeted loss removes high-pressure facilities first. Cross-municipality assignment is permitted only through an eligible network path within the selected time threshold.
-- Road-evidence boundary: Event restriction records do not identify complete motorized or pedestrian edge failure. Motorized results therefore vary speed rather than deleting matched edges, and no motorized scenario is interpreted as observed event travel time. Toll and expressway edges are permitted for motorized paths, while demand and shelter access attachments remain on ordinary roads.
-- Output connection: Prefecture Shelter Demand and General Shelter Geography establishes the input geography; the capacity tables establish pre-network requirements; Walking and Motorized Accessibility Bounds identifies the access envelope; the 50-person gap map preserves a conservative stress case; Accessibility, Capacity, and Facility-Unavailability Robustness and Network Accessibility and Robustness distinguish access, capacity, and failure effects.
-- Interpretation limit: Capacity-Constrained Served Demand is the share assigned under a modeled rule set. Model Explanation Gap is the residual not explained by that rule set, not observed unaccommodated population. Facilities may have been unsafe, closed, staffed differently, or replaced by non-designated destinations, and actual residents may have used vehicles or traveled beyond the threshold.
+- Design principle: This is an applied partial-identification and scenario-comparison assessment. It estimates how much of an official-total-scaled stress surface can be assigned to the designated general-shelter system under explicit access, capacity, opening, and facility-availability rules. It does not reconstruct actual evacuation, estimate actual travel-mode shares, or infer an unobserved factual capacity for every shelter.
+- Demand identification: The largest available official aggregate observation, 10,467 Reported Evacuees, scales three counterfactual residential stress surfaces using Residential Population, Housing-Loss Shelter Demand Central, and Housing-Loss Shelter Demand High. The aggregate is an observed reference; every mesh- and municipality-level allocation is modeled. The unscaled housing-loss estimates remain contextual displacement inputs.
+- Capacity identification: Standardized Capacity per General Shelter is 100 persons in the central scenario, 50 persons is a conservative stress case, and 25 and 200 persons are lower and upper sensitivities. Official Numeric Capacity from 118 deduplicated general shelters provides plausibility calibration only. Welfare-specific shelters remain outside unrestricted general-population supply.
+- Reverse-requirement contrast: Minimum Open Shelters Required, Required Capacity if All General Shelters Open, and Critical Reverse Capacity are calculated before network routing. These arithmetic screens distinguish implausible capacity requirements from gaps created by geographic access or a limited opening budget.
+- Access identification: The 15-minute, 4-km/h walking case is the restrictive accessibility bound. Motorized travel uses road-class baseline travel time on every traversed road edge, and each edge time is divided by Motorized Speed Factor. The central factor is 0.50; 0.25 and 1.00 are sensitivity values. Off-network demand and shelter connectors remain walking segments at 4 km/h. Vehicle-Enabled Demand Share ranges from zero to one and proportionally divides each demand unit into walking-only and vehicle-enabled components without estimating observed behavior.
+- Shared-capacity identification: Walking-only and vehicle-enabled components compete for the same Scenario-Available General Shelter Capacity and the same opening budget. Vehicle-enabled demand may use the faster reachable walking or motorized route, but capacity cannot be counted once for each mode. At most 415 general shelters may open in the central constrained comparison. This optimistic budget is anchored to the official undifferentiated Open Shelters total, not an observed list of open general shelters.
+- Allocation algorithm: The location-allocation estimand is maximum Capacity-Constrained Served Demand. A coverage-selection relaxation supplies an upper bound, and exact maximum flow through the selected facilities supplies a feasible lower bound. Equality proves the maximum-service result; otherwise the lower bound and relative solver gap are reported. The analysis does not claim to minimize the number of openings, minimize assigned travel time, or identify a unique optimal facility set.
+- Comparable constraint diagnosis: The high-housing-loss-weighted stress geography, 15-minute threshold, 4-km/h walking speed, 0.50 Motorized Speed Factor, and 415-opening budget form the common comparison base. Mode availability is varied across five Vehicle-Enabled Demand Shares at the 100-person central capacity. Capacity is compared at a fixed 50-percent vehicle-enabled share using the 50- and 100-person cases. Opening scale compares at most 415 openings with all 1,156 general shelters selectable under the same central mixed-mode assumptions. Facility-unavailability penalties use that same base. A factor is described as more binding only when its matched percentage-point contrast is larger; the contrasts are descriptive scenario comparisons rather than causal effects.
+- Robustness identification: Demand geography, capacity threshold, walking speed, time threshold, capacity-free Motorized Speed Factor, Vehicle-Enabled Demand Share, opening scale, and 0, 10, 20, and 30 percent facility unavailability are varied. Random unavailability is summarized across reproducible draws. Targeted loss ranks facilities by the declared central mixture of 50-percent walking-only reachable pressure and 50-percent vehicle-enabled reachable pressure. The walking-only single-shelter screen remains secondary evidence. Cross-municipality assignment is allowed only through an eligible path within the selected time threshold.
+- Road-evidence boundary: Event records do not establish complete motorized or pedestrian edge failure, event congestion, or direction-specific road operability. Motorized scenarios therefore scale travel time on all eligible and available road edges rather than imposing undocumented closures. Toll and expressway edges may be used in motorized paths, while demand and shelter attachments remain on ordinary roads. The motorized graph is an accessibility bound where directionality is unavailable, not an observed post-earthquake transport system.
+- Output connection: Prefecture Shelter Demand and General Shelter Geography establishes the stress inputs; the capacity tables establish pre-network requirements; Walking and Motorized Accessibility Bounds reports corrected access envelopes; Capacity-Constrained Service Gaps under the 50-Person Stress Case preserves the restrictive walking stress case; Accessibility, Capacity, and Facility-Unavailability Robustness and Network Accessibility and Robustness report matched access, shared-capacity, opening, and failure contrasts.
+- Interpretation limit: Capacity-Constrained Served Demand is assigned modeled stress demand. Model Explanation Gap is demand not explained by the selected designated-shelter rules, not observed people refused shelter. Actual residents may have traveled farther, used vehicles or non-designated places, crossed unmodeled road conditions, or encountered facility conditions absent from the available evidence.
 
 ## 6. Main Estimation Framework
 
@@ -321,13 +323,13 @@ Here, \(c_s^*\) is the smallest integer per-shelter capacity that satisfies the 
 
 ### Walking, Motorized, and Mixed-Mode Accessibility
 
-Let demand unit \(i\) attach to road edge \(e_i\) of length \(L_{e_i}\) at fractional position \(f_i\), and let shelter \(j\) attach to network node \(n_j\). The within-network distance is
+Let demand unit \(i\) and shelter \(j\) attach to an augmented pedestrian graph that splits their accepted access edges at the attachment positions. Let \(\mathcal{P}_{ij}^{W}\) be the set of eligible pedestrian paths between those positions and let \(d_e\) be the length in meters of pedestrian edge or fractional edge segment \(e\). The within-network walking distance is
 
 \[
-\delta_{ij}=\min\left\{f_iL_{e_i}+d(n_{e_i}^{from},n_j),(1-f_i)L_{e_i}+d(n_{e_i}^{to},n_j)\right\}.
+\delta_{ij}=\min_{\pi\in\mathcal{P}_{ij}^{W}}\sum_{e\in\pi}d_e.
 \]
 
-Here, \(\delta_{ij}\) is the shortest network distance from demand access point \(i\) to shelter node \(n_j\), \(n_{e_i}^{from}\) and \(n_{e_i}^{to}\) are the access-edge endpoints, and \(d(\cdot,\cdot)\) is shortest-path distance on eligible and available road edges. Door-to-door Network Walking Time is
+Here, \(\delta_{ij}\) is the shortest pedestrian-network distance, \(\pi\) is one eligible path, and \(e\) indexes every complete or fractional road segment on that path. Door-to-door Network Walking Time is
 
 \[
 t_{ijv}=\frac{60\left(\ell_i^{snap}+\delta_{ij}+\ell_j^{snap}\right)}{1000v}.
@@ -347,97 +349,130 @@ G_{svh}=\frac{\sum_i D_{is}1[\sum_j a_{ijvh}>0]}{\sum_i D_{is}}.
 
 Here, \(G_{svh}\) is the share of scenario demand within reach of at least one general shelter before capacity and opening limits.
 
-Let \(\tau_{ij}\) be the shortest road-class baseline travel time between the demand and shelter access edges and let \(q\in\{0.25,0.50,1.00\}\) be Motorized Speed Factor. Network Motorized Time is
+Let \(\mathcal{P}_{ij}^{M}\) be the set of eligible motorized paths between the augmented demand and shelter access positions, let \(\tau_e\) be road-class baseline travel time in minutes for complete or fractional motorized edge segment \(e\), and let \(q\in\{0.25,0.50,1.00\}\) be Motorized Speed Factor. Corrected within-network motorized time is
 
 \[
-m_{ijq}=\frac{60\ell_i^{snap}}{1000v_w}+\frac{\tau_{ij}}{q}+\frac{60\ell_j^{snap}}{1000v_w}.
+\tau_{ijq}^{road}=\min_{\pi\in\mathcal{P}_{ij}^{M}}\sum_{e\in\pi}\frac{\tau_e}{q}.
 \]
 
-Here, \(m_{ijq}\) is connector-inclusive motorized time, \(v_w=4\) km/h is connector walking speed, and the central benchmark uses \(q=0.50\). Let \(b_{ijqh}=1[m_{ijq}\leq h]\) be motorized reachability. Vehicle-enabled demand may use either mode, so its reachability is \(r_{ijqh}=\max(a_{ij,4,h},b_{ijqh})\). For Vehicle-Enabled Demand Share \(p\in\{0,0.25,0.50,0.75,1.00\}\), Mixed-Mode Accessibility Coverage is
+Here, \(\tau_{ijq}^{road}\) is shortest motorized road time under factor \(q\). The division by \(q\) applies to every intervening road edge and to the road portions of both access edges; it is not limited to the two local access edges. Network Motorized Time is
 
 \[
-G_s^{mix}(p)=\frac{\sum_iD_{is}\left((1-p)1[\sum_ja_{ij,4,15}>0]+p1[\sum_jr_{ij,0.50,15}>0]\right)}{\sum_iD_{is}}.
+m_{ijq}=\frac{60\ell_i^{snap}}{1000v_w}+\tau_{ijq}^{road}+\frac{60\ell_j^{snap}}{1000v_w}.
 \]
 
-Here, \(G_s^{mix}(p)\) is an accessibility bound, not an estimate of observed mode share.
-
-### Facility Selection and Capacity-Constrained Assignment
-
-Let \(z_j\in\{0,1\}\) indicate whether general shelter \(j\) opens and let \(y_{ijscvh}\geq0\) be stress demand assigned from unit \(i\) to shelter \(j\). The conservative walking stress case sets \(c=50\), \(v=4\), \(h=15\), and permits at most \(B=415\) general shelters. Capacity interpretation centers on \(c=100\), while accessibility interpretation compares walking and mixed-mode bounds. The first lexicographic stage solves
+Here, \(m_{ijq}\) is connector-inclusive motorized time and \(v_w=4\) km/h is connector walking speed. The central benchmark uses \(q=0.50\). Motorized reachability is \(b_{ijqh}=1[m_{ijq}\leq h]\). Vehicle-enabled demand may use either mode, so its reachability is \(r_{ijqvh}=\max(a_{ijvh},b_{ijqh})\). For Vehicle-Enabled Demand Share \(p\in\{0,0.25,0.50,0.75,1.00\}\), Mixed-Mode Accessibility Coverage is
 
 \[
-Z_{scvh}^{max}=\max_{y,z}\sum_i\sum_j y_{ijscvh}
+G_{spqvh}^{mix}=\frac{\sum_iD_{is}\left((1-p)1[\sum_ja_{ijvh}>0]+p1[\sum_jr_{ijqvh}>0]\right)}{\sum_iD_{is}}.
 \]
 
-subject to
+Here, \(G_{spqvh}^{mix}\) is the share of scenario demand with access before shelter capacity and opening constraints. It is an accessibility bound, not an estimate of observed mode share. Pairwise motorized reachability is enumerated with time-truncated shortest paths so that the later allocation model can consider every reachable shelter rather than only the nearest shelter.
+
+Network validation must precede substantive interpretation. For each demand-shelter pair, \(m_{ij,0.25}\geq m_{ij,0.50}\geq m_{ij,1.00}\), and the corresponding reachable sets must be nested. The minimum pairwise time over shelters must reproduce the corrected nearest-shelter result. Speed-factor sensitivity is invalid if only the access-edge portions change while intervening path edges retain unscaled baseline time.
+
+### Shared-Capacity Multimodal Facility Selection and Assignment
+
+For a fixed scenario \(\theta=(s,c,p,q,v,h,B,u)\), let \(B\) be the maximum number of modeled openings, let \(u\) index a facility-availability realization, and let \(o_{ju}\in\{0,1\}\) indicate whether general shelter \(j\) is available in that realization. Let \(z_{j\theta}\in\{0,1\}\) indicate whether shelter \(j\) opens. Let \(y_{ij\theta}^{W}\geq0\) and \(y_{ij\theta}^{V}\geq0\) be walking-only and vehicle-enabled stress demand assigned from unit \(i\) to shelter \(j\). The maximum-service problem is
 
 \[
-0\leq y_{ijscvh}\leq D_{is}a_{ijvh},
+Z_{\theta}^{max}=\max_{y,z}\sum_i\sum_j\left(y_{ij\theta}^{W}+y_{ij\theta}^{V}\right)
 \]
 
-\[
-\sum_j y_{ijscvh}\leq D_{is},
-\]
+Here, \(\theta\) collects all scenario parameters and \(Z_{\theta}^{max}\) is maximum assigned demand. The optimization is subject to
 
 \[
-\sum_i y_{ijscvh}\leq cz_j,
-\]
-
-\[
-\sum_j z_j\leq B.
-\]
-
-Here, \(Z_{scvh}^{max}\) is maximum served demand and \(B\) is the opening limit. Conditional on maximum service, the second stage minimizes \(\sum_j z_j\), the number of modeled open shelters. Conditional on both maximum service and the minimum opening count, the third stage solves
-
-\[
-\min_y\sum_i\sum_j t_{ijv}y_{ijscvh}
-\]
-
-subject to the preceding constraints and fixed first- and second-stage optima. Capacity-Constrained Served Demand and Model Explanation Gap are
-
-\[
-S_{iscvh}=\sum_j y_{ijscvh},
+0\leq y_{ij\theta}^{W}\leq(1-p)D_{is}a_{ijvh},
 \]
 
 \[
-Q_{iscvh}=D_{is}-S_{iscvh}.
+\sum_j y_{ij\theta}^{W}\leq(1-p)D_{is},
 \]
 
-Here, \(S_{iscvh}\) is assigned stress demand and \(Q_{iscvh}\) is Model Explanation Gap in unit \(i\).
+\[
+0\leq y_{ij\theta}^{V}\leq pD_{is}r_{ijqvh},
+\]
 
-### Current Evidence Before Multimodal Capacity Allocation
+\[
+\sum_j y_{ij\theta}^{V}\leq pD_{is},
+\]
 
-For the high-housing-loss-weighted 10,467-person stress surface, 15-minute walking access at 4 km/h reaches 6,286.84 persons before capacity and opening constraints. The 50-person, at-most-415-opening stress allocation assigns 5,894.54 persons (56.32 percent), leaving a Model Explanation Gap of 4,572.46 persons (43.68 percent). These values quantify the restrictive walking rule; they do not estimate event shelter admission or actual unmet need.
+\[
+\sum_i\left(y_{ij\theta}^{W}+y_{ij\theta}^{V}\right)\leq cz_{j\theta},
+\]
 
-The central 0.50 motorized speed factor reaches 10,439.26 persons (99.74 percent) within 15 minutes. Mixed-mode accessibility rises from 60.06 percent when no demand is vehicle-enabled to 69.98, 79.90, 89.82, and 99.74 percent at vehicle-enabled shares of 25, 50, 75, and 100 percent. The near-complete motorized bound identifies accessibility assumptions as the main source of the earlier residual.
+\[
+z_{j\theta}\leq o_{ju},\qquad \sum_jz_{j\theta}\leq B.
+\]
 
-Capacity-threshold sensitivity separates capacity, opening-scale, and geographic limits. With at most 415 openings, proven-optimal service is 5,894.54 persons at 50 persons per shelter, 6,004.58 at 100 persons, and 6,006.57 at 200 persons. The 25-person run returns 5,518.74 persons with a 5,530.35 upper bound and 0.21 percent MIP gap. When all 1,156 general shelters are available, exact service is 5,835.86, 6,181.05, 6,286.84, and 6,286.84 persons at 25, 50, 100, and 200 persons per shelter. Thus capacity of at least 100 persons removes capacity shortfall among geographically reachable demand only when all general shelters are available; it cannot overcome the 15-minute geographic ceiling, and the 415-opening limit remains binding even at 200 persons.
+The shared capacity constraint prevents the same shelter capacity from being counted separately for walking-only and vehicle-enabled demand. Computation uses a coverage-selection relaxation as an upper bound and exact maximum flow through the selected facilities as a feasible lower bound. Equality of the bounds proves the maximum-service optimum; otherwise both the lower bound and relative solver gap are retained. Opening counts and facility selections are computational solutions for maximum service, not minimum-opening or minimum-travel-time estimands. Capacity-Constrained Served Demand, Model Explanation Gap, and assigned share are
 
-Demand-geography sensitivity holds the observed-total-scaled stress load at 10,467 and the conservative 15-minute, 4-km/h, 50-person, 415-opening assumptions constant. Proven-optimal assigned shares are 62.60 percent for population weighting, 62.03 percent for central-housing-loss weighting, and 56.32 percent for high-housing-loss weighting. The high-loss geography is therefore the most demanding of the three under the restrictive walking rules.
+\[
+S_{i\theta}=\sum_j\left(y_{ij\theta}^{W}+y_{ij\theta}^{V}\right),
+\]
 
-Walking sensitivity holds high-loss-weighted stress demand, capacity, and opening scale constant. Proven-optimal served shares are 18.84 percent at 10 minutes and 3 km/h, 38.58 percent at 15 minutes and 3 km/h, and 32.01 percent at 10 minutes and 4 km/h. At 30 minutes, time-limited feasible service reaches 77.72 percent at 3 km/h with a 0.89 percent MIP gap and 87.06 percent at 4 km/h with a 1.66 percent MIP gap. These are lower bounds, with corresponding solver upper bounds of 78.41 and 88.50 percent, and are not labeled proven optima.
+\[
+Q_{i\theta}=D_{is}-S_{i\theta},
+\]
 
-General-shelter unavailability is evaluated on the conservative 1-km walking network using 30 reproducible random draws per removal share plus a deterministic high-reachable-pressure stress test. Random removal of 10, 20, and 30 percent yields mean assigned shares of 54.02, 51.22, and 47.67 percent, with observed draw ranges of 53.08-54.98, 49.55-52.82, and 45.14-50.48 percent. Pressure-targeted removal produces much larger declines: assigned shares fall to 37.20, 19.23, and 11.51 percent. Targeted removal is a worst-case concentration diagnostic, not a probability forecast. All unavailability solutions have reported MIP gaps below 0.1 percent.
+\[
+A_{\theta}=100\frac{\sum_iS_{i\theta}}{\sum_iD_{is}}.
+\]
 
-Single-shelter removal reoptimizes the remaining facility pool for the 30 highest reachable-pressure general shelters. The largest confirmed service-loss lower bounds are 47.92 persons for Toyofuku Elementary School Gymnasium in Uki, 47.91 each for Uki City Ogawa Disaster Prevention Base Center and Ogawa General Cultural Center Rapport, 47.89 for Kagami Elementary School in Yatsushiro, and 46.30 for Matsutaka Elementary School in Yatsushiro. These losses remain after replacement facility selection and are close to one full 50-person standardized capacity. The screen is not exhaustive: lower-total-pressure shelters may still be locally indispensable and require municipality-specific follow-up.
+Here, \(S_{i\theta}\) is assigned stress demand, \(Q_{i\theta}\) is Model Explanation Gap in unit \(i\), and \(A_{\theta}\) is the percentage of scenario demand assigned under the complete rule set.
+
+### Matched Constraint Contrasts
+
+Let \(A_s(p,c,B,q,u)\) denote \(A_{\theta}\) when \(v=4\) km/h and \(h=15\) minutes are fixed. Let \(u=0\) denote no facility removal. The mode-availability contrast is
+
+\[
+\Delta_s^{mode}=A_s(0.50,100,415,0.50,0)-A_s(0,100,415,0.50,0).
+\]
+
+Here, \(\Delta_s^{mode}\) is the percentage-point difference between the central 50-percent vehicle-enabled scenario and walking-only shared-capacity assignments. The fully vehicle-enabled case remains an upper sensitivity bound. The capacity contrast at the same central mixed-mode share is
+
+\[
+\Delta_s^{capacity}=A_s(0.50,100,415,0.50,0)-A_s(0.50,50,415,0.50,0).
+\]
+
+Here, \(\Delta_s^{capacity}\) is the percentage-point gain from increasing shared capacity from the 50-person stress case to the 100-person central case. The opening-scale contrast is
+
+\[
+\Delta_s^{opening}=A_s(0.50,100,1156,0.50,0)-A_s(0.50,100,415,0.50,0).
+\]
+
+Here, \(\Delta_s^{opening}\) is the percentage-point gain when all 1,156 general shelters may be selected instead of at most 415. For a nonzero facility-removal realization \(u\), facility-availability loss is
+
+\[
+L_{su}^{facility}=A_s(0.50,100,415,0.50,0)-A_s(0.50,100,415,0.50,u).
+\]
+
+Here, \(L_{su}^{facility}\) is the percentage-point service loss relative to the matched no-removal scenario. Comparing \(\Delta_s^{mode}\), \(\Delta_s^{capacity}\), \(\Delta_s^{opening}\), and \(L_{su}^{facility}\) identifies the largest operational constraint within the stated scenarios. It does not identify a causal effect or an observed mechanism.
+
+### Current Valid Evidence and Focused Re-estimation
+
+The completed walking analysis remains valid as a restrictive stress benchmark. Under the high-housing-loss-weighted 10,467-person stress surface, 15-minute walking at 4 km/h reaches 60.1 percent before capacity and opening constraints. The 50-person, at-most-415-opening walking allocation assigns 56.3 percent and leaves a 43.7 percent Model Explanation Gap.
+
+Corrected motorized time now scales every intervening road edge. The 15-minute motorized accessibility bound is 99.0 percent at the central 0.50 speed factor. Under shared 100-person capacity and at most 415 openings, assigned service rises from 57.4 percent for walking-only demand to 77.5 percent when 50 percent of demand is vehicle-enabled. At the same 50-percent vehicle-enabled share, the 50-person lower bound is 77.4 percent with an upper bound equal to the proven 100-person result; the supported capacity gain is therefore between zero and approximately 0.1 percentage point. Focused re-estimation adds the all-1,156-opening central case and replaces vehicle-only targeted pressure with the declared 50-percent walking and 50-percent vehicle-enabled pressure.
 
 ### Scenario and Failure Sensitivity
 
-Relationship to Section 8 outputs: The demand equations support Prefecture Shelter Demand and General Shelter Geography; reverse-capacity equations support Municipality Reverse Capacity and Opening Pressure and the two capacity tables; accessibility equations support Walking and Motorized Accessibility Bounds; allocation and failure models support the 50-person stress-case map, Accessibility, Capacity, and Facility-Unavailability Robustness, and Network Accessibility and Robustness.
+Relationship to Section 8 outputs: The demand equations support Prefecture Shelter Demand and General Shelter Geography; reverse-capacity equations support Municipality Reverse Capacity and Opening Pressure and the two capacity tables; corrected accessibility equations support Walking and Motorized Accessibility Bounds; shared-capacity allocation and matched contrasts support Accessibility, Capacity, and Facility-Unavailability Robustness and Network Accessibility and Robustness; the walking-only 50-person allocation supports Capacity-Constrained Service Gaps under the 50-Person Stress Case.
 
 - Demand geography: Three 10,467-person observed-total-scaled stress spatializations based on Residential Population and central or high housing-loss demand. Unscaled low, central, and high housing-loss estimates remain contextual demand-construction bounds.
 - Capacity: 100 persons per open general shelter is central; 50 persons is the conservative stress case; 25 and 200 persons are lower and upper sensitivities.
-- Access: 15 minutes at 4 km/h is the restrictive walking bound. Motorized speed factors of 0.25, 0.50, and 1.00 and vehicle-enabled demand shares from zero to one define accessibility sensitivity.
+- Access: 15 minutes at 4 km/h is the restrictive walking bound. Motorized Speed Factors of 0.25, 0.50, and 1.00 define capacity-free accessibility sensitivity. Vehicle-Enabled Demand Shares of 0, 0.25, 0.50, 0.75, and 1.00 are evaluated at \(q=0.50\).
+- Shared-capacity multimodal screen: Mode availability is evaluated for \(p\in\{0,0.25,0.50,0.75,1.00\}\) at \(c=100\), \(q=0.50\), \(v=4\) km/h, \(h=15\) minutes, and \(B=415\). The matched capacity contrast uses \(p=0.50\) and \(c\in\{50,100\}\). The 25- and 200-person thresholds remain walking capacity sensitivities rather than multimodal optimization cases.
 - Opening scale: all general shelters available versus an optimistic budget of at most 415 modeled general-shelter openings anchored to the official undifferentiated open-shelter total.
-- Unavailability: 0, 10, 20, and 30 percent of general shelters unavailable. Reproducible random draws measure distributional sensitivity; targeted removal evaluates dependence on high-pressure shelters.
+- Unavailability: 0, 10, 20, and 30 percent of general shelters unavailable. Reproducible random draws measure distributional sensitivity; targeted removal evaluates dependence on facilities ranked by \(0.5\) times walking-reachable pressure plus \(0.5\) times vehicle-enabled reachable pressure. The matched multimodal comparison uses \(p=0.50\), \(c=100\), \(q=0.50\), \(v=4\) km/h, \(h=15\) minutes, and \(B=415\). The existing walking-only, 50-person failure test remains a conservative secondary benchmark.
 - Road evidence: Walking uses the pedestrian-screened graph; motorized sensitivity uses all eligible and available road edges with road-class travel time and explicit speed factors. Administrative traffic restrictions, baseline bridge classes, and warning-zone exposure are not converted into deterministic event closures.
 - For individual shelter \(j\), failure service loss is
 
 \[
-L_{jscvh}=Q_{scvh}^{(-j)}-Q_{scvh}.
+L_{j\theta}^{person}=\sum_iQ_{i\theta}^{(-j)}-\sum_iQ_{i\theta}.
 \]
 
-Here, \(Q_{scvh}^{(-j)}\) is prefecture-wide Model Explanation Gap after shelter \(j\) is unavailable and \(Q_{scvh}\) is the corresponding baseline gap.
+Here, \(L_{j\theta}^{person}\) is additional Model Explanation Gap in persons after shelter \(j\) is removed and the remaining system is reoptimized, and \(Q_{i\theta}^{(-j)}\) is the post-removal gap in demand unit \(i\).
 
 ## 7. Analytical Workflow
 
@@ -446,10 +481,13 @@ Here, \(Q_{scvh}^{(-j)}\) is prefecture-wide Model Explanation Gap after shelter
 | Separate general and welfare-specific supply and calibrate thresholds | Shelter Service Class, Official Numeric Capacity, Capacity Evidence Tier, Official Capacity Threshold Calibration | Threshold-calibration share in Section 4 | Capacity Evidence and Threshold Calibration | Whether 100 persons is a defensible central capacity case and 50 persons a conservative stress case | partially supported by 118 documented general shelters in three municipalities; selection limitation remains |
 | Construct official-total-scaled stress surfaces | Residential Population, Housing-Loss Shelter Demand Central, Housing-Loss Shelter Demand High, Reported Evacuees, Municipality, Epicentral Distance | Demand spatialization equations in Section 6 | Prefecture Shelter Demand and General Shelter Geography | Whether an observed aggregate can scale alternative geographies without becoming observed local demand | supported as three counterfactual spatializations; no origin reconstruction |
 | Estimate reverse capacity and openings | Standardized Capacity per General Shelter, Minimum Open Shelters Required, Required Capacity if All General Shelters Open, Critical Reverse Capacity | Reverse capacity and opening equations in Section 6 | Municipality Reverse Capacity and Opening Pressure; Aggregate Stress Load and Reverse Capacity Thresholds; Municipality Shelter Opening and Capacity Pressure | Whether pre-network requirements differ between prefecture arithmetic and municipality-contained ceilings | supported; both definitions will be labelled directly in the revised outputs |
-| Calculate walking and motorized accessibility bounds | Network Walking Time, Network Motorized Time, Motorized Speed Factor, Vehicle-Enabled Demand Share, Mixed-Mode Accessibility Coverage, Municipality, Shelter Location | Walking, motorized, and mixed-mode equations in Section 6 | Walking and Motorized Accessibility Bounds | Whether the apparent gap is determined by the walking rule | supported: 15-minute accessibility rises from 60.1 percent under walking to 99.7 percent under the central motorized benchmark |
-| Preserve the conservative capacity-constrained stress allocation | Standardized Capacity per General Shelter, Scenario-Available General Shelter Capacity, Capacity-Constrained Served Demand, Model Explanation Gap, Network Walking Time, Municipality | Three-stage allocation in Section 6 | Capacity-Constrained Service Gaps under the 50-Person Stress Case; Network Accessibility and Robustness | How much of each stress geography is explainable under the restrictive walking, opening, and 50-person rules | completed for three demand spatializations; 56.3 percent assigned under high-loss weighting, interpreted as a lower bound rather than actual service |
-| Test capacity and facility-loss robustness | Standardized Capacity per General Shelter, Scenario-Available General Shelter Capacity, Capacity-Constrained Served Demand, Model Explanation Gap, Shelter Location | Capacity grid and failure-loss equation in Section 6 | Accessibility, Capacity, and Facility-Unavailability Robustness; Network Accessibility and Robustness | Whether capacity or facility concentration remains binding after accessibility is separated | capacity and walking-based facility-loss results complete; multimodal capacity screen pending |
-| Maintain the road-evidence boundary | Motorized Speed Factor, Network Motorized Time | Speed-factor sensitivity without deterministic event edge deletion | Walking and Motorized Accessibility Bounds; Network Accessibility and Robustness | Whether available road evidence supports motorized sensitivity without claiming observed travel time | partially supported as static accessibility bounds; event congestion, damage, and mode choice remain unobserved |
+| Rebuild corrected motorized pairwise travel times | Demand Walking-Network Attachment, Shelter Walking-Network Attachment, Network Motorized Time, Motorized Speed Factor, Shelter Location | Every-edge motorized path-time equation and nesting checks in Section 6 | Walking and Motorized Accessibility Bounds; Network Accessibility and Robustness | Whether motorized sensitivity is internally valid before substantive comparison | supported; every-edge scaling passes nesting checks and the central motorized bound is 99.0 percent |
+| Calculate walking, motorized, and mixed-mode accessibility bounds | Network Walking Time, Network Motorized Time, Motorized Speed Factor, Vehicle-Enabled Demand Share, Mixed-Mode Accessibility Coverage, Municipality, Shelter Location | Pairwise reachability and mixed-mode coverage equations in Section 6 | Walking and Motorized Accessibility Bounds | Whether relaxing the walking-only rule materially expands access before capacity constraints | supported; coverage increases monotonically from 60.1 to 99.0 percent across the vehicle-enabled share |
+| Preserve the conservative walking allocation | Standardized Capacity per General Shelter, Scenario-Available General Shelter Capacity, Capacity-Constrained Served Demand, Model Explanation Gap, Network Walking Time, Municipality | Walking-only special case of the maximum-service model with \(p=0\) | Capacity-Constrained Service Gaps under the 50-Person Stress Case; Network Accessibility and Robustness | How much of each stress geography is explainable under restrictive walking, opening, and 50-person rules | supported for three stress geographies; 56.3 percent assigned under high-loss weighting and interpreted as a lower-bound stress result |
+| Estimate shared-capacity multimodal allocation | Network Walking Time, Network Motorized Time, Motorized Speed Factor, Vehicle-Enabled Demand Share, Standardized Capacity per General Shelter, Scenario-Available General Shelter Capacity, Capacity-Constrained Served Demand, Model Explanation Gap | Maximum-service shared-capacity model with reported lower and upper bounds in Section 6 | Accessibility, Capacity, and Facility-Unavailability Robustness; Network Accessibility and Robustness | Whether mode availability still changes explainable service after capacity and the 415-opening budget are imposed | supported for the 100-person mode grid and matched 50-percent vehicle-enabled capacity contrast; nonzero gaps are retained explicitly |
+| Compare matched operational constraints | Vehicle-Enabled Demand Share, Standardized Capacity per General Shelter, Scenario-Available General Shelter Capacity, Capacity-Constrained Served Demand, Model Explanation Gap | Mode, capacity, opening-scale, and facility-loss contrasts in Section 6 | Accessibility, Capacity, and Facility-Unavailability Robustness; Network Accessibility and Robustness | Whether accessibility, deployable capacity, opening scale, or facility availability is most binding under a common scenario base | supported within the declared scenarios; mode availability adds 20.1 percentage points, all-shelter selection adds 2.0 points, and the supported capacity gain is at most about 0.1 point |
+| Test facility unavailability and critical shelters | Scenario-Available General Shelter Capacity, Capacity-Constrained Served Demand, Model Explanation Gap, Shelter Location, Municipality | Random, mixed-pressure targeted, and secondary walking single-removal reoptimization with the failure-loss equation in Section 6 | Accessibility, Capacity, and Facility-Unavailability Robustness; Network Accessibility and Robustness | Whether service depends disproportionately on a concentrated facility set | supported as sensitivity evidence; mixed-pressure targeted removal reduces assigned service to 65.9, 38.2, and 22.7 percent at 10, 20, and 30 percent removal |
+| Maintain the road-evidence boundary | Motorized Speed Factor, Network Motorized Time | Speed-factor sensitivity on every traversed edge without deterministic event edge deletion | Walking and Motorized Accessibility Bounds; Network Accessibility and Robustness | Whether static road evidence supports bounded motorized planning scenarios without claiming observed travel time | partially supported by available road attributes; congestion, damage, directionality, and observed mode choice remain unobserved |
 
 ## 8. Figure and Table Plan
 
@@ -458,18 +496,18 @@ Here, \(Q_{scvh}^{(-j)}\) is prefecture-wide Model Explanation Gap after shelter
 | title | what it expresses | figure type | subpanels | key variables | status |
 |---|---|---|---:|---|---|
 | Prefecture Shelter Demand and General Shelter Geography | Locates prefecture-wide housing-loss demand, the three 10,467-person observed-use stress spatializations, all general shelters, welfare-specific shelters, municipalities, and the official hypocenter without treating modeled local demand as observed use. | map | 4 | Housing-Loss Shelter Demand High, Reported Evacuees, Residential Population, Municipality, Epicentral Distance, Shelter Location, Shelter Service Class | done |
-| Municipality Reverse Capacity and Opening Pressure | Shows municipality-contained opening requirements under the 100-person central capacity case while retaining 50 persons as a conservative stress case and avoiding cross-scenario ranking. | map and bar | 3 | Municipality, Minimum Open Shelters Required, Required Capacity if All General Shelters Open, Critical Reverse Capacity, Standardized Capacity per General Shelter | pending |
-| Walking and Motorized Accessibility Bounds | Compares 15-minute walking reachability with connector-inclusive motorized reachability, shows mixed-mode coverage across vehicle-enabled demand shares, and identifies municipalities where mode availability changes the accessibility bound most. | map, line, and bar | 4 | Network Walking Time, Network Motorized Time, Motorized Speed Factor, Vehicle-Enabled Demand Share, Mixed-Mode Accessibility Coverage, Municipality, Shelter Location | pending |
-| Capacity-Constrained Service Gaps under the 50-Person Stress Case | Maps assigned stress demand and the Model Explanation Gap after jointly enforcing walking reachability, 50-person capacity, and the opening budget; it is explicitly a conservative stress case rather than the central capacity estimate. | map | 3 | Standardized Capacity per General Shelter, Capacity-Constrained Served Demand, Model Explanation Gap, Municipality, Shelter Location | pending |
-| Accessibility, Capacity, and Facility-Unavailability Robustness | Separates the gains from motorized or mixed-mode accessibility from the much smaller gains produced by increasing capacity, then reports random, pressure-targeted, and single-facility unavailability. | line, bar, and map | 4 | Mixed-Mode Accessibility Coverage, Standardized Capacity per General Shelter, Scenario-Available General Shelter Capacity, Capacity-Constrained Served Demand, Model Explanation Gap, Shelter Location | pending |
+| Municipality Reverse Capacity and Opening Pressure | Shows municipality-contained opening requirements under the 100-person central capacity case while retaining 50 persons as a conservative stress case and avoiding cross-scenario ranking. | map and bar | 3 | Municipality, Minimum Open Shelters Required, Required Capacity if All General Shelters Open, Critical Reverse Capacity, Standardized Capacity per General Shelter | done |
+| Walking and Motorized Accessibility Bounds | Compares 15-minute walking reachability with connector-inclusive motorized reachability, shows mixed-mode coverage across vehicle-enabled demand shares, and identifies municipalities where mode availability changes the accessibility bound most. | map, line, and bar | 4 | Network Walking Time, Network Motorized Time, Motorized Speed Factor, Vehicle-Enabled Demand Share, Mixed-Mode Accessibility Coverage, Municipality, Shelter Location | done |
+| Capacity-Constrained Service Gaps under the 50-Person Stress Case | Maps assigned stress demand and the Model Explanation Gap after jointly enforcing walking reachability, 50-person capacity, and the opening budget; it is explicitly a conservative stress case rather than the central capacity estimate. | map | 3 | Standardized Capacity per General Shelter, Capacity-Constrained Served Demand, Model Explanation Gap, Municipality, Shelter Location | done |
+| Accessibility, Capacity, and Facility-Unavailability Robustness | Separates matched mode, capacity, and opening-scale gains, then reports random, mixed-pressure-targeted, and secondary single-facility unavailability. | line, bar, and map | 4 | Mixed-Mode Accessibility Coverage, Standardized Capacity per General Shelter, Scenario-Available General Shelter Capacity, Capacity-Constrained Served Demand, Model Explanation Gap, Shelter Location | done |
 
 ### Tables
 
 | title | what it expresses | rows | columns | row meaning | column meaning | status |
 |---|---|---:|---:|---|---|---|
-| Capacity Evidence and Threshold Calibration | Documents shelter service class, numeric-capacity evidence, source coverage, and threshold calibration without repeating row-level interpretations; the note explains that 100 persons is central and 50 persons is conservative. | 12 | 8 | One evidence tier, municipality calibration group, or capacity threshold | Shelter counts, official capacity distribution, threshold coverage, and source limitation | pending |
-| Aggregate Stress Load and Reverse Capacity Thresholds | Compares the four official event-use snapshots with capacity scenarios, labels 10,467 as an observed-total-scaled stress load rather than actual unmet demand, and distinguishes prefecture arithmetic from municipality-contained ceilings. | 20 | 9 | One snapshot-threshold or spatialization-critical-capacity combination | Observation, stress load, opening reference, threshold capacity, surplus or shortfall, and minimum openings | pending |
-| Municipality Shelter Opening and Capacity Pressure | Provides four prefecture summaries plus ten municipalities selected within one declared high-loss-weighted scenario, including infeasible counts and both the 50-person stress and 100-person central opening requirements. | 14 | 10 | One prefecture scenario summary or one high-pressure municipality within the high-loss-weighted scenario | Demand, general shelters, municipality-contained openings, feasibility, required average capacity, and source distance | pending |
-| Network Accessibility and Robustness | Provides a concise paper-facing summary of walking, motorized, mixed-mode, capacity, and facility-loss results, including the 20-percent random-removal case and selected municipality gaps. | 26 | 12 | One accessibility, allocation, municipality, or facility-loss scenario | Mode assumptions, capacity assumptions, accessible or assigned demand, explanation gap, municipality evidence, failure loss, and solver qualification | pending |
+| Capacity Evidence and Threshold Calibration | Documents shelter service class, numeric-capacity evidence, source coverage, and threshold calibration without repeating row-level interpretations; the note explains that 100 persons is central and 50 persons is conservative. | 12 | 8 | One evidence tier, municipality calibration group, or capacity threshold | Shelter counts, official capacity distribution, threshold coverage, and source limitation | done |
+| Aggregate Stress Load and Reverse Capacity Thresholds | Compares the four official event-use snapshots with capacity scenarios, labels 10,467 as an observed-total-scaled stress load rather than actual unmet demand, and distinguishes prefecture arithmetic from municipality-contained ceilings. | 20 | 9 | One snapshot-threshold or spatialization-critical-capacity combination | Observation, stress load, opening reference, threshold capacity, surplus or shortfall, and minimum openings | done |
+| Municipality Shelter Opening and Capacity Pressure | Provides four prefecture summaries plus ten municipalities selected within one declared high-loss-weighted scenario, including infeasible counts and both the 50-person stress and 100-person central opening requirements. | 14 | 10 | One prefecture scenario summary or one high-pressure municipality within the high-loss-weighted scenario | Demand, general shelters, municipality-contained openings, feasibility, required average capacity, and source distance | done |
+| Network Accessibility and Robustness | Provides a concise paper-facing summary of walking, motorized, mixed-mode, matched capacity, opening-scale, and facility-loss results, including the 20-percent random-removal case and selected municipality gaps. | 27 | 12 | One accessibility, allocation, opening-scale, municipality, or facility-loss scenario | Mode assumptions, capacity and opening assumptions, accessible or assigned demand, explanation gap, municipality evidence, failure loss, and solver qualification | done |
 
 Interpretation warning: The 10,467-person total is an observed aggregate used to scale counterfactual residential demand surfaces; model residuals are explanation gaps under stated designated-shelter and network constraints, not observed people refused shelter. Walking and motorized results are accessibility bounds, and vehicle-enabled shares are sensitivity parameters rather than reconstructed behavior. Lower-pressure facilities may still be locally critical, and no scenario represents every real road and facility state.

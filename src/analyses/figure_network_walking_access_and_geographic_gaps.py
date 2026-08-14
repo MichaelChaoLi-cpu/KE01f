@@ -33,7 +33,7 @@ SUMMARY_PATH = (
 )
 OUTPUT_PATH = (
     ROOT
-    / "data/results/figures/Figure_network_walking_access_and_geographic_gaps.png"
+    / "data/exp/legacy-outputs/Figure_network_walking_access_and_geographic_gaps.png"
 )
 
 HIGH_STRESS_MEASURE = "Observed-Use Stress Demand High Housing-Loss Weighted"

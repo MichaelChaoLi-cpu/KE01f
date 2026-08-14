@@ -17,7 +17,7 @@ from shapely import from_wkb
 ROOT = Path(__file__).resolve().parents[2]
 ACCESS_PATH = (
     ROOT
-    / "data/processed/kumamoto_prefecture_nearest_shelter_motorized_access_preprocessed.parquet"
+    / "data/exp/prefecture-shelter-multimodal-access/nearest_shelter_motorized_access_corrected.parquet"
 )
 SHELTER_PATH = (
     ROOT
@@ -210,12 +210,12 @@ def main() -> None:
                markeredgecolor="none", markersize=4.5, label=f"General shelter (n={int(general.sum()):,})"),
         Line2D([0], [0], color="#6f6f6f", linewidth=0.7, label="Municipality / ward boundary"),
     ]
-    fig.legend(handles=legend_handles, loc="lower center", bbox_to_anchor=(0.5, 0.018),
+    fig.legend(handles=legend_handles, loc="center", bbox_to_anchor=(0.5, 0.515),
                ncol=4, frameon=False, fontsize=8.2, handletextpad=0.5, columnspacing=1.5)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUTPUT_PATH, dpi=150, bbox_inches="tight", facecolor="white")
     plt.close(fig)
-    print(f"Saved {OUTPUT_PATH}")
+    print(f"Saved: {OUTPUT_PATH.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

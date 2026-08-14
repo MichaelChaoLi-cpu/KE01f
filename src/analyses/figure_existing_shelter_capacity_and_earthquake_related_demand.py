@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DEMAND_INPUT = ROOT / "data/processed/kumamoto_shelter_demand_125m_map_preprocessed.parquet"
 WARD_INPUT = ROOT / "data/processed/kumamoto_city_ward_boundaries_preprocessed.parquet"
 SHELTER_INPUT = ROOT / "data/processed/kumamoto_shelter_network_access_preprocessed.parquet"
-PNG_OUTPUT = ROOT / "data/results/figures/Figure_existing_shelter_capacity_and_earthquake_related_demand.png"
+PNG_OUTPUT = ROOT / "data/exp/legacy-outputs/Figure_existing_shelter_capacity_and_earthquake_related_demand.png"
 SVG_OUTPUT = PNG_OUTPUT.with_suffix(".svg")
 OBSERVED_USE = 2_344
 

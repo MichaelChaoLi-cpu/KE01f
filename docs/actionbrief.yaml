@@ -158,20 +158,23 @@ datasetDictionary:
       reverse requirements before network assignment, and labeled thresholds as assumptions rather than observed
       facility capacities.
   capacity_constrained_allocation:
-    datasetSourceName: kumamoto_prefecture_primary_shelter_allocation_preprocessed.parquet and robustness outputs
-    datasetDescription: Mesh-level served and unmet demand from the capacity-constrained shelter-opening and assignment
-      model, with threshold, access, and failure sensitivities.
+    datasetSourceName: Kumamoto walking, motorized, shared-capacity allocation, and robustness analytical outputs
+    datasetDescription: Mesh-level assigned demand and model explanation gaps from walking-only and shared-capacity
+      multimodal shelter-selection models, with accessibility, opening-scale, and facility-loss sensitivities.
     datasetAttribute: table
     datasetProvider: Authors
-    datasetGenerationInfo: A lexicographic mixed-integer model maximized served demand, minimized openings, and
-      then minimized walking distance subject to reachability, demand, capacity, and opening constraints.
+    datasetGenerationInfo: Maximum-service location-allocation models assign walking-only and vehicle-enabled demand
+      to shared shelter capacity. A coverage-selection relaxation supplies an upper bound and exact maximum flow
+      through selected facilities supplies a feasible lower bound.
     datasetPeriod: First 0-72 hours after 28 July 2026
-    datasetScale: 62,945 primary mesh allocations plus scenario, municipality, and facility-loss summaries
+    datasetScale: 62,945 walking-stress mesh allocations plus multimodal scenario, municipality, and facility-loss
+      summaries
     datasetSpatialResolution: Populated 125 m mesh, municipality, or shelter-removal scenario
     datasetTemporalResolution: Static primary scenario and sensitivity grid
-    datasetPreprocessingInfo: Solved the 50-person, 415-opening, 15-minute, 4-km/h primary model; retained solver
-      status and bounds; ran demand-geography, capacity, walking, random-unavailability, targeted-loss, and screened
-      single-shelter sensitivities.
+    datasetPreprocessingInfo: Preserved the 50-person walking-only stress allocation; rebuilt motorized time by scaling
+      every traversed road edge; split demand by vehicle-enabled share; enforced shared shelter capacity; retained
+      solver lower and upper bounds; and ran matched capacity, opening-scale, random-loss, mixed-pressure-targeted,
+      and secondary single-shelter sensitivities.
 variableDictionary:
   residential_demand_unit_id:
     variableNameInDataset: Residential Demand Unit ID
@@ -639,30 +642,72 @@ variableDictionary:
       Construction: Reported separately for population, housing-loss demand, and three observed-use stress spatializations.'
     variableSource: nearest_shelter_walking_access
     observationNumber: 24
+  motorized_speed_factor:
+    variableNameInDataset: Motorized Speed Factor
+    variableNameInArticle: Fraction of Baseline Road Speed Available after the Earthquake
+    variableAttribute: ordinal
+    variableUnit: proportion
+    variableDescription: 'Role: accessibility parameter. Definition: \(q\in\{0.25,0.50,1.00\}\). Construction:
+      Multiplies road-class baseline speed on every traversed edge; 0.50 is the central low-speed benchmark and
+      the other values bound more severe disruption and an undisrupted reference without estimating observed speed.'
+    variableSource: capacity_constrained_allocation
+    observationNumber: 3
+  network_motorized_time:
+    variableNameInDataset: Network Motorized Time
+    variableNameInArticle: Connector-Inclusive Time to a General Shelter by Motor Vehicle
+    variableAttribute: continuous
+    variableUnit: minutes
+    variableDescription: 'Role: accessibility measure. Definition: \(m_{ijq}=\ell_i^{snap}/v_w+\tau_{ij}/q+\ell_j^{snap}/v_w\).
+      Construction: Uses 4 km/h on off-network connectors and speed-factor-adjusted road-class time on every eligible
+      and available path edge; expressways and toll roads may occur within motorized paths.'
+    variableSource: capacity_constrained_allocation
+    observationNumber: 62945
+  vehicle_enabled_demand_share:
+    variableNameInDataset: Vehicle-Enabled Demand Share
+    variableNameInArticle: Share of Scenario Demand Able to Use a Motor Vehicle
+    variableAttribute: ordinal
+    variableUnit: proportion
+    variableDescription: 'Role: accessibility parameter. Definition: \(p\in\{0,0.25,0.50,0.75,1.00\}\). Construction:
+      Proportionally splits each demand unit into walking-only and vehicle-enabled components. Values are sensitivity
+      bounds, not estimates of observed evacuation mode choice or vehicle sleeping.'
+    variableSource: capacity_constrained_allocation
+    observationNumber: 5
+  mixed_mode_accessibility_coverage:
+    variableNameInDataset: Mixed-Mode Accessibility Coverage
+    variableNameInArticle: Scenario Demand within Reach under a Walking and Motorized Mode Split
+    variableAttribute: continuous
+    variableUnit: percent of scenario demand
+    variableDescription: 'Role: accessibility outcome. Definition: \(G_s^{mix}(p)=(1-p)G_s^{walk}+pG_s^{motor}\).
+      Construction: Combines capacity-free walking and motorized reachability bounds before shelter capacity and
+      opening limits and does not reconstruct individual travel behavior.'
+    variableSource: capacity_constrained_allocation
+    observationNumber: 5
   capacity_constrained_served_demand:
     variableNameInDataset: Capacity-Constrained Served Demand
     variableNameInArticle: Demand Assigned to Reachable General Shelter Capacity
     variableAttribute: continuous
     variableUnit: persons
-    variableDescription: 'Role: service outcome. Definition: \(S_{is}=\sum_j y_{ijs}\). Construction: Final for
-      all three 10,467-person demand spatializations under the primary 50-person, optimistic 415-opening, 15-minute,
-      and 4-km/h assumptions; walking, capacity, and facility-unavailability sensitivities are also complete.'
+    variableDescription: 'Role: service outcome. Definition: \(S_{i\theta}=\sum_j(y_{ij\theta}^{W}+y_{ij\theta}^{V})\).
+      Construction: Measures modeled stress demand assignable under an explicit mode split, capacity, opening,
+      and availability scenario; the preserved walking-only 50-person case is one restrictive special case.'
     variableSource: capacity_constrained_allocation
     observationNumber: 62945
-  local_unmet_shelter_demand:
-    variableNameInDataset: Local Unmet Shelter Demand
-    variableNameInArticle: Demand Unserved after Access and Capacity Constraints
+  model_explanation_gap:
+    variableNameInDataset: Model Explanation Gap
+    variableNameInArticle: Stress Demand Not Assigned within the Modeled Designated-Shelter Rules
     variableAttribute: continuous
     variableUnit: persons
-    variableDescription: 'Role: primary gap outcome. Definition: \(U_{is}=D_{is}-\sum_j y_{ijs}\). Construction:
-      Final for the high-loss-weighted primary scenario and separates lack of reachable selected capacity from aggregate
-      prefecture-wide supply.'
+    variableDescription: 'Role: diagnostic outcome. Definition: \(Q_{i\theta}=D_{is}-S_{i\theta}\). Construction:
+      Measures the limit of the selected designated-shelter, access, capacity, opening, and availability rules. It
+      may reflect longer travel, motorized movement, non-designated destinations, or omitted mechanisms and is not
+      an observed count of residents refused shelter.'
     variableSource: capacity_constrained_allocation
     observationNumber: 62945
 tableDictionary:
   table_capacity_evidence_and_threshold_calibration:
     tableId: table_capacity_evidence_and_threshold_calibration
     tablePath: data/results/tables/Table_capacity_evidence_and_threshold_calibration.xlsx
+    tableSheet: Capacity Calibration
     tableCaption: Shelter capacity evidence and threshold calibration
     tableAim: Document evidence coverage and assess whether standardized capacity thresholds are plausible.
     tableExplanation: The inventory contains 1,156 general and 159 welfare-specific shelters. Official numeric capacity
@@ -672,8 +717,9 @@ tableDictionary:
     tableSuitableSection: 'Methods and results: capacity evidence'
   table_aggregate_observed_use_and_reverse_capacity_thresholds:
     tableId: table_aggregate_observed_use_and_reverse_capacity_thresholds
-    tablePath: data/results/tables/Table_aggregate_observed_use_and_reverse_capacity_thresholds.xlsx
-    tableCaption: Observed shelter use and reverse capacity thresholds
+    tablePath: data/results/tables/Table_aggregate_stress_load_and_reverse_capacity_thresholds.xlsx
+    tableSheet: Aggregate Thresholds
+    tableCaption: Aggregate stress load and reverse capacity thresholds
     tableAim: Contrast official aggregate shelter-use snapshots with standardized and reverse capacity requirements.
     tableExplanation: The four official snapshots contain 4,744 to 10,467 evacuees and 415 to 466 undifferentiated
       open shelters. At the largest available observation, 25 persons per shelter produces a 92-person aggregate
@@ -684,6 +730,7 @@ tableDictionary:
   table_municipality_shelter_opening_and_capacity_pressure:
     tableId: table_municipality_shelter_opening_and_capacity_pressure
     tablePath: data/results/tables/Table_municipality_shelter_opening_and_capacity_pressure.xlsx
+    tableSheet: Municipality Pressure
     tableCaption: Municipality shelter-opening and capacity pressure
     tableAim: Summarize prefecture totals and the ten municipalities with the greatest pre-network pressure.
     tableExplanation: The concise table reports four prefecture summaries and ten high-pressure municipalities;
@@ -693,214 +740,249 @@ tableDictionary:
     tableSuitableSection: 'Results: municipality capacity pressure'
   table_network_adequacy_and_robustness:
     tableId: table_network_adequacy_and_robustness
-    tablePath: data/results/tables/Table_network_adequacy_and_robustness.xlsx
-    tableCaption: Network shelter adequacy and robustness
-    tableAim: Consolidate primary, sensitivity, municipality-gap, and screened critical-shelter results.
-    tableExplanation: The primary high-loss-weighted model serves 56.32 percent and leaves 4,572.46 persons unmet.
-      Raising capacity to 100 or 200 persons with at most 415 openings improves service only to about 57.4 percent;
-      30-minute walking at 4 km/h yields an 87.1-percent time-limit lower bound. Targeted facility loss is far more
-      damaging than random loss. Municipality and single-shelter sections are selected summaries, with full analytical
-      outputs retained separately.
-    tableSuitableSection: 'Results: network adequacy and robustness'
+    tablePath: data/results/tables/Table_network_accessibility_and_robustness.xlsx
+    tableSheet: Network Robustness
+    tableCaption: Network accessibility and robustness
+    tableAim: Consolidate walking, motorized, shared-capacity, opening-scale, and facility-loss evidence.
+    tableExplanation: Under the high-loss-weighted 10,467-person stress surface, 15-minute walking access covers
+      60.1 percent and the central motorized bound covers 99.0 percent. With 100-person shared capacity and at most
+      415 openings, modeled service rises from 57.4 percent when all demand is walking-only to 77.5 percent when
+      50 percent is vehicle-enabled. At that matched share, raising capacity from 50 to 100 persons adds at most
+      about 0.1 percentage point and allowing all 1,156 shelters adds 2.0 points. Mixed-pressure targeted removal
+      reduces service to 65.9, 38.2, and 22.7 percent at 10, 20, and 30 percent loss.
+    tableSuitableSection: 'Results: accessibility and robustness'
 figureDictionary:
   fig_prefecture_shelter_demand_and_general_shelter_geography:
     figureId: fig_prefecture_shelter_demand_and_general_shelter_geography
     figurePath: data/results/figures/Figure_prefecture_shelter_demand_and_general_shelter_geography.png
     figureCaption: Prefecture shelter demand and general shelter geography
-    figureAim: Compare housing-loss demand and three equal-total observed-use stress spatializations with the general
-      and welfare-specific shelter inventory.
-    figureExplanation: Panel a maps 2,282.7 modeled high housing-loss demand; panels b-d each redistribute the 10,467-person
-      observed-use benchmark by population, central loss, or high loss. The map also distinguishes 1,156 general
-      shelters, 159 welfare-specific shelters, municipality boundaries, and the official hypocenter. Local stress
-      values are modeled alternatives, not observed evacuee origins.
+    figureAim: Compare unscaled housing-loss demand and three equal-total observed-use stress spatializations with
+      the designated shelter inventory.
+    figureExplanation: Panel a maps 2,282.7 modeled high housing-loss demand. Panels b-d each redistribute the 10,467-person
+      observed-use reference by population, central housing loss, or high housing loss. The maps distinguish 1,156
+      general shelters, 159 welfare-specific shelters, municipality boundaries, and the official hypocenter. Local
+      stress values are counterfactual spatializations rather than observed evacuee origins.
     figureSuitableSection: 'Results: demand geography and shelter inventory'
     figurePanelCount: 4
     figureNote: Panel a maps modeled high housing-loss shelter demand. Panel b maps the population-weighted observed-use
-      stress scenario. Panel c maps the central-loss-weighted observed-use stress scenario. Panel d maps the high-loss-weighted
-      observed-use stress scenario. All panels show general shelters, welfare-specific shelters, municipality boundaries,
-      and the official hypocenter; the three stress maps redistribute an equal prefecture-wide total and do not represent
-      observed evacuee origins.
+      stress surface. Panel c maps the central-loss-weighted surface. Panel d maps the high-loss-weighted surface.
+      All panels show general shelters, welfare-specific shelters, municipality boundaries, and the official hypocenter.
+      The last three panels preserve the same 10,467-person total and do not reconstruct observed local origins.
   fig_municipality_reverse_capacity_and_opening_pressure:
     figureId: fig_municipality_reverse_capacity_and_opening_pressure
     figurePath: data/results/figures/Figure_municipality_reverse_capacity_and_opening_pressure.png
-    figureCaption: Municipality capacity and shelter-opening pressure
-    figureAim: Show pre-network municipality capacity requirements and the critical standardized capacity under
-      the optimistic 415-opening budget.
-    figureExplanation: Under the high-loss-weighted stress scenario, Yatsushiro requires about 47 persons per shelter
-      if all local general shelters open, while Uki requires 31 of 37 local shelters at the 50-person threshold.
-      Across modeled spatializations, critical reverse capacity ranges from 27 to 49 persons, with 47 persons for
-      the primary high-loss geography. These are municipality-contained reverse requirements before walking constraints.
+    figureCaption: Municipality reverse capacity and opening pressure
+    figureAim: Show municipality-contained pre-network capacity and opening requirements under one high-loss-weighted
+      stress geography.
+    figureExplanation: Yatsushiro, Uki, and Hikawa have the largest required average capacities when every local
+      general shelter opens. At the 100-person central capacity, Kumamoto City, Yatsushiro, and Uki require the most
+      local openings. The final panel compares 50-person conservative and 100-person central opening requirements
+      for ten municipalities selected within the same high-loss-weighted scenario.
     figureSuitableSection: 'Results: reverse capacity and opening requirements'
     figurePanelCount: 3
-    figureNote: Panel a maps the average capacity required when every local general shelter opens under the high-loss-weighted
-      stress scenario. Panel b maps the minimum number of local general shelters that must open at 50 persons per shelter.
-      Panel c compares the critical capacity per open shelter across the modeled housing-loss and observed-use stress
-      scenarios against the 50-person primary threshold. These are municipality-contained calculations made before
-      walking-network constraints.
-  fig_network_walking_access_and_geographic_gaps:
-    figureId: fig_network_walking_access_and_geographic_gaps
-    figurePath: data/results/figures/Figure_network_walking_access_and_geographic_gaps.png
-    figureCaption: Walking access to general shelters across Kumamoto Prefecture
-    figureAim: Locate populated meshes with and without a reachable general shelter under walking-speed and time-threshold
-      assumptions.
-    figureExplanation: At 4 km/h, population coverage rises from 40.4 percent within 10 minutes to 67.2 percent
-      within 15 minutes and 92.4 percent within 30 minutes; high-loss-weighted stress-demand coverage is 34.5, 60.1,
-      and 91.6 percent. At 3 km/h and 15 minutes, coverage falls to 48.0 percent of population and 41.3 percent
-      of high-stress demand. These values precede shelter capacity and opening limits.
-    figureSuitableSection: 'Results: geographic accessibility'
+    figureNote: Panel a maps average capacity required if all local general shelters open under high-loss weighting.
+      Panel b maps municipality-contained minimum openings at the 100-person central capacity. Panel c compares
+      50-person conservative and 100-person central opening requirements for ten high-pressure municipalities in
+      the same stress scenario. These calculations precede network assignment and do not permit cross-boundary service.
+  fig_walking_and_motorized_accessibility_bounds:
+    figureId: fig_walking_and_motorized_accessibility_bounds
+    figurePath: data/results/figures/Figure_walking_and_motorized_accessibility_bounds.png
+    figureCaption: Walking and motorized accessibility bounds
+    figureAim: Compare corrected walking and motorized reachability and show how vehicle availability changes the
+      capacity-free accessibility envelope.
+    figureExplanation: Fifteen-minute walking at 4 km/h reaches 60.1 percent of high-loss-weighted stress demand,
+      whereas the corrected central motorized scenario reaches 99.0 percent. Mixed-mode accessibility increases
+      monotonically as the vehicle-enabled share rises from zero to one. Municipality gains locate where relaxing
+      the walking-only rule matters most before capacity and opening constraints.
+    figureSuitableSection: 'Results: multimodal accessibility bounds'
     figurePanelCount: 4
-    figureNote: Panel a maps populated meshes with or without a reachable general shelter within 10 minutes at 4 km/h.
-      Panel b applies a 15-minute threshold at 4 km/h. Panel c applies a 30-minute threshold at 4 km/h. Panel d applies
-      the mobility-constrained sensitivity of 15 minutes at 3 km/h. Every panel reports population and high-loss-weighted
-      demand coverage before shelter capacity and opening limits are imposed.
-  fig_capacity_constrained_service_gaps_at_50_persons:
-    figureId: fig_capacity_constrained_service_gaps_at_50_persons
-    figurePath: data/results/figures/Figure_capacity_constrained_service_gaps_at_50_persons.png
-    figureCaption: Capacity-constrained shelter service gaps across demand spatializations
-    figureAim: Compare spatial service after jointly imposing 15-minute reachability, 50-person capacity, and at
-      most 415 openings.
-    figureExplanation: The model serves 62.6 percent of population-weighted demand, 62.0 percent of central-loss-weighted
-      demand, and 56.3 percent of high-loss-weighted demand. The primary high-loss geography leaves 4,572.5 of 10,467
-      persons unmet. Mesh-level served and unserved locations describe one optimized allocation, while municipality
-      and aggregate summaries are the primary location-specific evidence.
-    figureSuitableSection: 'Results: capacity-constrained adequacy'
+    figureNote: Panel a maps populated meshes reachable within 15 minutes by walking at 4 km/h. Panel b maps 15-minute
+      motorized reachability with the 0.50 road-speed factor and connector walking. Panel c traces the capacity-free
+      accessibility envelope over vehicle-enabled demand shares from zero to one. Panel d ranks the ten municipalities
+      with the largest gain from the walking-only to fully vehicle-enabled bound. These are scenario bounds rather
+      than observed travel behavior.
+  fig_capacity_constrained_service_gaps_under_the_50_person_stress_case:
+    figureId: fig_capacity_constrained_service_gaps_under_the_50_person_stress_case
+    figurePath: data/results/figures/Figure_capacity_constrained_service_gaps_under_the_50_person_stress_case.png
+    figureCaption: Capacity-constrained service gaps under the 50-person stress case
+    figureAim: Compare spatial assignment under restrictive walking access, conservative shelter capacity, and
+      at most 415 modeled openings.
+    figureExplanation: The walking-only stress model assigns 62.6 percent of population-weighted demand, 62.0 percent
+      of central-loss-weighted demand, and 56.3 percent of high-loss-weighted demand. The high-loss-weighted surface
+      leaves a 4,572-person model explanation gap. These allocations diagnose the restrictive 50-person case and
+      do not claim observed admission failure.
+    figureSuitableSection: 'Results: conservative walking stress case'
     figurePanelCount: 3
-    figureNote: Panel a maps fully served, partly served, and unserved demand under the population-weighted stress
-      scenario. Panel b maps the same allocation outcomes under the central-loss-weighted stress scenario. Panel c
-      maps the primary high-loss-weighted stress scenario. All panels impose a 15-minute walking threshold, 50-person
-      capacity per open general shelter, and a maximum of 415 openings.
-  fig_threshold_and_facility_unavailability_robustness:
-    figureId: fig_threshold_and_facility_unavailability_robustness
-    figurePath: data/results/figures/Figure_threshold_and_facility_unavailability_robustness.png
-    figureCaption: Shelter capacity and facility-loss robustness
-    figureAim: Test whether the adequacy result changes with capacity, opening scale, facility unavailability, and
-      screened single-shelter loss.
-    figureExplanation: Higher capacity reduces unmet demand but cannot exceed the 15-minute geographic ceiling,
-      and the 415-opening limit remains binding. Random loss of 10, 20, and 30 percent of shelters produces mean
-      served shares of 54.0, 51.2, and 47.7 percent, whereas pressure-targeted loss reduces them to 37.2, 19.2,
-      and 11.5 percent. Single-shelter losses cover only the 30 highest-pressure facilities, so lower-pressure local
-      criticality remains untested.
-    figureSuitableSection: 'Results: robustness and facility criticality'
+    figureNote: Panel a maps fully assigned, partly assigned, and unassigned population-weighted stress demand. Panel
+      b maps the same outcomes under central-loss weighting. Panel c maps high-loss-weighted outcomes. All panels
+      impose 15-minute walking at 4 km/h, 50 persons per open general shelter, and at most 415 openings. The unassigned
+      quantity is a model explanation gap, not an observed count of people refused shelter.
+  fig_accessibility_capacity_and_facility_unavailability_robustness:
+    figureId: fig_accessibility_capacity_and_facility_unavailability_robustness
+    figurePath: data/results/figures/Figure_accessibility_capacity_and_facility_unavailability_robustness.png
+    figureCaption: Accessibility capacity and facility-unavailability robustness
+    figureAim: Compare mode availability, capacity, opening scale, and facility loss under matched assumptions.
+    figureExplanation: With 100-person shared capacity and at most 415 openings, assigned service rises from 57.4
+      percent for walking-only demand to 77.5 percent when 50 percent is vehicle-enabled. Under that matched share,
+      increasing capacity from 50 to 100 persons adds no more than about 0.1 percentage point, whereas allowing all
+      shelters adds 2.0 points. Targeted facility unavailability causes substantially larger losses than random removal.
+    figureSuitableSection: 'Results: matched robustness and facility dependence'
     figurePanelCount: 4
-    figureNote: Panel a compares unmet high-loss-weighted demand across standardized capacity thresholds with and
-      without the 415-opening limit and against the 15-minute geographic lower bound. Panel b compares random and
-      pressure-targeted shelter unavailability at 10, 20, and 30 percent. Panel c maps service-loss lower bounds for
-      the 30 screened high-pressure single-shelter removals. Panel d ranks the ten largest confirmed single-shelter
-      service losses. The single-site results do not establish criticality for unscreened lower-pressure shelters.
+    figureNote: Panel a shows shared-capacity service over vehicle-enabled demand shares, with solver bounds where
+      needed. Panel b compares the 50-person lower bound, the proven 100-person result, and all 1,156 shelters selectable
+      under matched access. Panel c compares random and mixed-pressure-targeted removal at 10, 20, and 30 percent.
+      Panel d maps secondary walking-only single-shelter loss estimates for 30 screened facilities. Random draws are
+      sensitivities, targeted removal is a concentration test, and the single-site screen is not exhaustive.
 analysisStructureBrief:
-  overview: The analysis moves from official aggregate-use evidence and alternative small-area demand spatializations
-    to reverse capacity requirements, pedestrian-network accessibility, capacity-constrained shelter assignment,
-    and facility-loss robustness. It separates observed prefecture totals from modeled local demand and reports
-    conditional adequacy rather than actual event operations.
+  overview: The applied assessment moves from official aggregate shelter-use evidence and counterfactual small-area
+    stress surfaces to capacity calibration, reverse requirements, corrected walking and motorized accessibility,
+    shared-capacity maximum-service allocation, and matched facility-loss robustness. It separates observed prefecture
+    totals from modeled local demand and interprets residual demand as a model explanation gap rather than actual
+    refusal or operational failure.
   levels:
   - levelName: Demand scenario construction
-    levelAim: Create comparable prefecture-wide shelter-demand geographies without inventing observed local origins.
+    levelAim: Create comparable prefecture-wide stress geographies without inventing observed local evacuee origins.
     inputs:
     - Residential Population
-    - Housing-Loss Shelter Demand Central
-    - Housing-Loss Shelter Demand High
-    - Reported Evacuees
-    - Municipality
-    - Epicentral Distance
-    modelOrMethod: For each weighting variable w_i, construct D_i = O * w_i / sum_r(w_r), where O is the largest
-      available reported aggregate use, 10,467. Preserve the unscaled low, central, and high housing-loss estimates
-      as contextual bounds.
+    - Central Housing-Loss Shelter-Demand Estimate
+    - Upper Housing-Loss Shelter-Demand Estimate
+    - Official Prefecture-Wide Shelter Users
+    - Municipality Name
+    - Distance from the Official Hypocenter
+    modelOrMethod: For weighting variable \(w_i\), use the equation \(D_{is}=O w_i/\sum_r w_r\), where \(O=10,467\)
+      is the largest available official aggregate observation. Preserve unscaled low, central, and high housing-loss
+      estimates as contextual bounds.
     outputs:
-    - Prefecture Shelter Demand and General Shelter Geography
-    - Aggregate Observed-Use and Reverse Capacity Thresholds
-    interpretation: Each spatialization preserves the same prefecture total and tests a plausible residential geography.
-      None identifies the observed municipality or residence of actual evacuees, and the four reports are discrete
-      snapshots rather than a continuous time series.
+    - Prefecture shelter demand and general shelter geography
+    - Aggregate stress load and reverse capacity thresholds
+    interpretation: Every scaled surface preserves the same observed reference total but remains counterfactual at
+      mesh and municipality levels. Four irregular official snapshots do not form a continuous time series or identify
+      the event peak.
   - levelName: Capacity evidence and reverse requirements
-    levelAim: Assess capacity adequacy without inventing unsupported facility areas or capacities.
+    levelAim: Calibrate standardized capacity scenarios and separate arithmetic capacity pressure from network access.
     inputs:
-    - Shelter Service Class
-    - Official Numeric Capacity
-    - Capacity Evidence Tier
-    - Standardized Capacity per General Shelter
-    - Open Shelters
-    - Municipality
-    modelOrMethod: For municipality g and scenario s, compute N_gs(c) = ceil(D_gs / c) and c_gs_all = D_gs / J_g
-      for c in {25, 50, 100, 200}. Critical capacity is the smallest c satisfying sum_g N_gs(c) <= 415 and N_gs(c)
-      <= J_g for every g.
+    - General or Welfare-Specific Shelter
+    - Primary Official Shelter Capacity
+    - Shelter Capacity Evidence Grade
+    - Capacity-Threshold Scenario
+    - Official Prefecture-Wide Open Shelter Count
+    - Municipality Name
+    modelOrMethod: For municipality \(g\), demand scenario \(s\), and capacity \(c\), use equations \(N_{gs}(c)=\lceil
+      D_{gs}/c\rceil\) and \(c_{gs}^{all}=D_{gs}/J_g\). Critical capacity is the smallest \(c\) satisfying \(\sum_g
+      N_{gs}(c)\leq415\) and \(N_{gs}(c)\leq J_g\) for every municipality.
     outputs:
-    - Capacity Evidence and Threshold Calibration
-    - Municipality Reverse Capacity and Opening Pressure
-    - Aggregate Observed-Use and Reverse Capacity Thresholds
-    - Municipality Shelter Opening and Capacity Pressure
-    interpretation: The 50-person primary value is a calibrated stress threshold, not a universal observed capacity.
-      The 415 limit is an optimistic budget anchored to an official count that does not distinguish general from
-      welfare-specific shelters. Reverse requirements precede network constraints.
-  - levelName: Pedestrian-network accessibility
-    levelAim: Measure whether residents can reach at least one general shelter under explicit walking assumptions.
+    - Capacity evidence and threshold calibration
+    - Aggregate stress load and reverse capacity thresholds
+    - Municipality shelter opening and capacity pressure
+    - Municipality reverse capacity and opening pressure
+    interpretation: One hundred persons is the central capacity case and 50 persons is a conservative stress case,
+      not a universal observed capacity. The 415-opening reference is optimistic and does not identify which general
+      shelters actually operated.
+  - levelName: Corrected multimodal accessibility
+    levelAim: Establish walking and motorized reachability bounds before capacity and opening constraints.
     inputs:
-    - Demand Walking-Network Attachment
-    - Shelter Walking-Network Attachment
-    - Network Walking Time
-    - Reachable within Time Threshold
-    - Residential Population
-    - Shelter Service Class
-    modelOrMethod: Compute door-to-door time t_ijv = 60 * (demand connector + shortest network distance + shelter
-      connector) / (1000 * v). Define a_ijvh = 1 when t_ijv <= h, for v in {3, 4} km/h and h in {10, 15, 30} minutes,
-      then calculate demand-weighted reachability coverage.
+    - Population-Mesh Centroid Attachment to Pedestrian-Screened Roads
+    - General-Shelter Attachment to Pedestrian-Screened Roads
+    - Door-to-Door Time to the Nearest General Shelter
+    - Connector-Inclusive Time to a General Shelter by Motor Vehicle
+    - Fraction of Baseline Road Speed Available after the Earthquake
+    - Share of Scenario Demand Able to Use a Motor Vehicle
+    modelOrMethod: Walking time follows \(t_{ijv}=60d_{ij}/(1000v)\). Motorized time follows \(m_{ijq}=\ell_i^{snap}/v_w+
+      \tau_{ij}/q+\ell_j^{snap}/v_w\), scaling every traversed edge. The capacity-free mixed accessibility equation
+      is \(G_s^{mix}(p)=(1-p)G_s^{walk}+pG_s^{motor}\).
     outputs:
-    - Network Walking Access and Geographic Gaps
-    - Network Adequacy and Robustness
-    interpretation: Reachability measures geographic opportunity before capacity and opening limits. The graph excludes
-      expressways and toll edges but does not delete edges from motor-vehicle restriction records because pedestrian
-      failure is not identified.
-  - levelName: Capacity-constrained facility selection and allocation
-    levelAim: Estimate maximum shelter service when reachability, capacity, and opening constraints apply together.
+    - Walking and motorized accessibility bounds
+    - Network accessibility and robustness
+    interpretation: The 60.1-percent walking and 99.0-percent central motorized results are accessibility bounds.
+      Speed factors and vehicle-enabled shares are sensitivity parameters; congestion, observed mode choice, and
+      complete event-specific road failure remain unidentified.
+  - levelName: Conservative walking allocation
+    levelAim: Preserve the approved restrictive stress benchmark across three equal-total demand geographies.
     inputs:
-    - Observed-Use Stress Demand High Housing-Loss Weighted
-    - Scenario-Available General Shelter Capacity
-    - Network Walking Time
-    - Standardized Capacity per General Shelter
-    - Capacity-Constrained Served Demand
-    - Local Unmet Shelter Demand
-    modelOrMethod: Use a lexicographic mixed-integer model. Stage 1 maximizes sum_ij y_ij; stage 2 minimizes sum_j
-      z_j conditional on maximum service; stage 3 minimizes sum_ij t_ij*y_ij conditional on the earlier targets.
-      Constraints require sum_j y_ij <= D_i, sum_i y_ij <= c*z_j, unreachable flows equal zero, and sum_j z_j <=
-      415.
+    - Population-Weighted Spatialization of Highest Available Observed Use
+    - Central-Loss-Weighted Spatialization of Highest Available Observed Use
+    - High-Loss-Weighted Spatialization of Highest Available Observed Use
+    - Capacity-Threshold Scenario
+    - Conditional General Shelter Supply
+    - Demand Assigned to Reachable General Shelter Capacity
+    - Stress Demand Not Assigned within the Modeled Designated-Shelter Rules
+    modelOrMethod: Use the maximum-service model with \(p=0\), \(c=50\), \(v=4\) km/h, \(h=15\) minutes, and
+      \(B=415\). Maximize \(\sum_{ij}y_{ij}\) subject to origin demand, reachable-flow, shared shelter capacity,
+      availability, and opening-budget constraints.
     outputs:
-    - Capacity-Constrained Service Gaps at 50 Persons
-    - Network Adequacy and Robustness
-    interpretation: The primary model serves 5,894.54 of 10,467 persons and leaves 4,572.46 unmet. Maximum service
-      and 415 openings are proven optimal; distance is exact only conditional on the selected stage-two opening
-      set. Mesh allocations represent one optimum, not observed facility use.
-  - levelName: Threshold and facility-loss robustness
-    levelAim: Determine whether the adequacy conclusion depends on capacity, walking, demand geography, or facility
-      availability.
+    - Capacity-constrained service gaps under the 50-person stress case
+    - Network accessibility and robustness
+    interpretation: Assigned shares of 62.6, 62.0, and 56.3 percent are conditional lower-stress benchmarks. The
+      high-loss-weighted 4,572-person residual is a model explanation gap, not observed unmet shelter admission.
+  - levelName: Shared-capacity multimodal allocation
+    levelAim: Estimate maximum assigned demand when walking-only and vehicle-enabled components compete for the
+      same shelter capacity.
     inputs:
-    - Standardized Capacity per General Shelter
-    - Scenario-Available General Shelter Capacity
-    - Capacity-Constrained Served Demand
-    - Local Unmet Shelter Demand
-    - Shelter Location
-    modelOrMethod: Re-solve the service model across 25, 50, 100, and 200 persons, multiple walking speeds and thresholds,
-      three demand geographies, 30 random draws for each 10, 20, and 30 percent removal share, pressure-targeted
-      removals, and single removal of each of the 30 highest-pressure shelters. Failure loss is L_j = U_without_j
-      - U_baseline.
+    - High-Loss-Weighted Spatialization of Highest Available Observed Use
+    - Door-to-Door Time to the Nearest General Shelter
+    - Connector-Inclusive Time to a General Shelter by Motor Vehicle
+    - Share of Scenario Demand Able to Use a Motor Vehicle
+    - Conditional General Shelter Supply
+    - Demand Assigned to Reachable General Shelter Capacity
+    - Stress Demand Not Assigned within the Modeled Designated-Shelter Rules
+    modelOrMethod: For scenario \(\theta\), maximize \(Z_\theta=\sum_{ij}(y_{ij\theta}^{W}+y_{ij\theta}^{V})\).
+      Origin constraints split demand by \(p\); the shared shelter equation is \(\sum_i(y_{ij\theta}^{W}+y_{ij\theta}^{V})
+      \leq c z_{j\theta}\), with \(\sum_jz_{j\theta}\leq B\). Coverage selection provides an upper bound and exact
+      maximum flow through selected facilities provides a feasible lower bound.
     outputs:
-    - Threshold and Facility-Unavailability Robustness
-    - Network Adequacy and Robustness
-    interpretation: Random removal summarizes sensitivity rather than probability, and targeted removal is a concentration
-      stress test. Single-shelter results are confirmed lower bounds for a screened set, not an exhaustive criticality
-      ranking; some time-limited scenarios are reported as lower bounds.
+    - Accessibility capacity and facility-unavailability robustness
+    - Network accessibility and robustness
+    interpretation: Equality of bounds proves maximum service; otherwise both bounds qualify the result. The central
+      50-percent vehicle-enabled, 100-person, 415-opening case assigns 77.5 percent, but it does not identify a unique
+      facility plan, minimum openings, or actual event operations.
+  - levelName: Matched constraint and opening-scale contrasts
+    levelAim: Identify the largest modeled operational constraint without mixing assumptions across comparisons.
+    inputs:
+    - Share of Scenario Demand Able to Use a Motor Vehicle
+    - Capacity-Threshold Scenario
+    - Conditional General Shelter Supply
+    - Demand Assigned to Reachable General Shelter Capacity
+    - Stress Demand Not Assigned within the Modeled Designated-Shelter Rules
+    modelOrMethod: With walking speed, time threshold, motorized factor, and no-removal state fixed, compute equations
+      \(\Delta^{mode}=A(0.50,100,415)-A(0,100,415)\), \(\Delta^{capacity}=A(0.50,100,415)-A(0.50,50,415)\), and
+      \(\Delta^{opening}=A(0.50,100,1156)-A(0.50,100,415)\).
+    outputs:
+    - Accessibility capacity and facility-unavailability robustness
+    - Network accessibility and robustness
+    interpretation: Mode availability adds 20.1 percentage points, all-shelter selection adds 2.0 points, and the
+      supported 50-to-100-person capacity gain is between zero and about 0.1 point. These are descriptive scenario
+      contrasts, not causal effects.
+  - levelName: Facility-unavailability robustness
+    levelAim: Test dependence on random, pressure-concentrated, and individual shelter losses.
+    inputs:
+    - Conditional General Shelter Supply
+    - Demand Assigned to Reachable General Shelter Capacity
+    - Stress Demand Not Assigned within the Modeled Designated-Shelter Rules
+    - Designated Shelter Geographic Location
+    - Municipality Name
+    modelOrMethod: Re-solve the shared-capacity model after reproducible random and mixed-pressure-targeted removals
+      of 10, 20, and 30 percent of shelters. Facility loss follows \(L_{su}=A_s(u=0)-A_s(u)\). The secondary walking
+      single-shelter equation is \(L_{j\theta}^{person}=\sum_iQ_{i\theta}^{(-j)}-\sum_iQ_{i\theta}\).
+    outputs:
+    - Accessibility capacity and facility-unavailability robustness
+    - Network accessibility and robustness
+    interpretation: Random removal is a sensitivity distribution and targeted removal is a concentration stress
+      test. Targeted service falls to 65.9, 38.2, and 22.7 percent; the 30-facility walking-only single-site screen
+      does not establish exhaustive criticality.
   - levelName: Decision interpretation and scope boundary
-    levelAim: Translate modeled gaps into defensible planning evidence and define when supplementary sites warrant
-      study.
+    levelAim: Translate conditional assignment evidence into planning conclusions while preserving the estimand boundary.
     inputs:
-    - Local Unmet Shelter Demand
-    - Network Walking Time
-    - Municipality
-    - Capacity Evidence Tier
-    modelOrMethod: Compare aggregate, municipality, and mesh results across plausible scenarios. Treat persistent
-      deficits as planning signals and consider supplementary sites only where geographic or capacity gaps survive
-      the primary and sensitivity analyses.
+    - Stress Demand Not Assigned within the Modeled Designated-Shelter Rules
+    - Door-to-Door Time to the Nearest General Shelter
+    - Connector-Inclusive Time to a General Shelter by Motor Vehicle
+    - Municipality Name
+    - Shelter Capacity Evidence Grade
+    modelOrMethod: Compare the aggregate, municipality, mesh, and facility-loss equations under matched scenarios.
+      Interpret persistent residuals as evidence about the explanatory reach of the modeled designated-shelter rules,
+      and consider supplementary sites only where gaps survive access, capacity, opening, and availability sensitivity.
     outputs:
     - All five figures and four tables
     - Supporting analytical data for all 45 municipalities
-    interpretation: Conditional sufficiency does not prove that shelters were safe, staffed, supplied, unlocked,
-      acceptable, or actually open. The present outputs evaluate the existing designated shelter system; supplementary
-      open-space analysis is a later conditional response, not part of the current adequacy estimand.
+    interpretation: Conditional assignment does not prove shelters were safe, staffed, supplied, unlocked, acceptable,
+      or actually open. Supplementary open-space optimization is outside the current adequacy estimand and would
+      require separate data and analysis.

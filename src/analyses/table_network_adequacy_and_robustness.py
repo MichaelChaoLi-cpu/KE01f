@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""Network Adequacy and Robustness.
+"""Network Accessibility and Robustness.
 
-Plan: Summarize the primary network-allocation result and its most informative
-demand, walking, capacity, facility-loss, and single-shelter sensitivities in a
-paper-ready table.
-Framework: Sections 5-7 use network reachability followed by capacity-constrained
-allocation and interpret service loss under facility failure as model sensitivity,
-not observed denial of shelter access.
+Plan: Summarize walking, motorized, mixed-mode, capacity, and facility-loss evidence.
+Framework: Sections 5-7 interpret walking and motorized results as accessibility
+bounds, capacity allocation as a conditional stress test, and facility loss as
+modeled sensitivity rather than observed denial of shelter.
 """
 
 from __future__ import annotations
@@ -21,432 +19,259 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEMAND_ACCESS_PATH = ROOT / "data/exp/shelter-robustness/demand_access_sensitivity.csv"
-CAPACITY_PATH = (
-    ROOT
-    / "data/exp/primary-capacity-constrained-allocation/capacity_threshold_sensitivity.csv"
-)
-FACILITY_PATH = ROOT / "data/exp/shelter-robustness/facility_unavailability_sensitivity.csv"
+ACCESS_PATH = ROOT / "data/exp/prefecture-shelter-multimodal-access/walking_and_motorized_accessibility_summary.csv"
+MIXED_PATH = ROOT / "data/exp/prefecture-shelter-multimodal-access/mixed_mode_accessibility_summary.csv"
+MUNICIPALITY_PATH = ROOT / "data/exp/prefecture-shelter-multimodal-access/municipality_mixed_mode_accessibility.csv"
+CAPACITY_PATH = ROOT / "data/exp/primary-capacity-constrained-allocation/capacity_threshold_sensitivity.csv"
 RANDOM_PATH = ROOT / "data/exp/shelter-robustness/facility_unavailability_random_summary.csv"
+FACILITY_PATH = ROOT / "data/exp/shelter-robustness/facility_unavailability_sensitivity.csv"
 CRITICAL_PATH = ROOT / "data/exp/shelter-robustness/critical_single_shelter_loss.csv"
-PRIMARY_SUMMARY_PATH = (
-    ROOT
-    / "data/exp/primary-capacity-constrained-allocation/primary_model_summary.csv"
-)
-PRIMARY_MUNICIPALITY_PATH = (
-    ROOT
-    / "data/exp/primary-capacity-constrained-allocation/primary_municipality_capacity_constrained_results.csv"
-)
-PRIMARY_OPENINGS_PATH = (
-    ROOT
-    / "data/exp/primary-capacity-constrained-allocation/primary_modeled_shelter_openings.csv"
-)
-OUTPUT_PATH = ROOT / "data/results/tables/Table_network_adequacy_and_robustness.xlsx"
+OUTPUT_PATH = ROOT / "data/exp/legacy-outputs/Table_network_adequacy_and_robustness.xlsx"
 SHEET_NAME = "Network Robustness"
-TABLE_TITLE = "Network Adequacy and Robustness"
 
-ENGLISH_CRITICAL_SHELTER_NAMES = {
+DEMAND_MEASURE = "Observed-Use Stress Demand High Housing-Loss Weighted"
+ENGLISH_NAMES = {"43100": "Kumamoto City", "43202": "Yatsushiro", "43213": "Uki"}
+CRITICAL_NAMES = {
     "E4321300034111": "Toyofuku Elementary School Gymnasium (Uki)",
-    "E4321300010111": "Uki City Ogawa Disaster Prevention Base Center (Uki)",
-    "E4321300011111": "Ogawa General Cultural Center Rapport (Uki)",
+    "E4321300010111": "Ogawa Disaster Prevention Base Center (Uki)",
+    "E4321300011111": "Rapport Cultural Center (Uki)",
     "E4320200016111": "Kagami Elementary School (Yatsushiro)",
-    "E4320200004111": "Matsutaka Elementary School (Yatsushiro)",
-}
-
-ENGLISH_MUNICIPALITY_NAMES = {
-    "43100": "Kumamoto City",
-    "43202": "Yatsushiro",
-    "43211": "Uto",
-    "43213": "Uki",
-    "43468": "Hikawa",
 }
 
 COLUMNS = [
-    "Evidence Block",
-    "Scenario",
-    "Demand Geography",
-    "Walking Speed (km/h)",
-    "Time Threshold (min)",
-    "Capacity per Shelter",
-    "Maximum Open Shelters",
-    "Facility Unavailability",
-    "Available / Modeled Open Shelters",
-    "Reachable Demand (%)",
-    "Served Demand (%)",
-    "Unmet Demand",
-    "Served-Demand Change from Primary",
-    "Interpretation / Solution Status",
+    "Evidence Block", "Scenario", "Vehicle-Enabled Demand Share (%)",
+    "Road Speed Factor", "Time Threshold (min)", "Capacity per Shelter",
+    "Maximum Open Shelters", "Available Shelters", "Accessible or Assigned Demand",
+    "Accessible or Assigned Share (%)", "Explanation Gap or Service Loss",
+    "Solution Qualification",
 ]
 
 
-def row_template() -> dict[str, object]:
-    return {column: None for column in COLUMNS}
-
-
-def solution_note(proven_optimal: object) -> str:
-    return "Proven optimal" if bool(proven_optimal) else "Time-limit incumbent; interpret as a lower bound"
+def empty_row() -> dict[str, object]:
+    return {column: pd.NA for column in COLUMNS}
 
 
 def build_table() -> pd.DataFrame:
-    access = pd.read_csv(DEMAND_ACCESS_PATH)
+    access = pd.read_csv(ACCESS_PATH)
+    mixed = pd.read_csv(MIXED_PATH)
     capacity = pd.read_csv(CAPACITY_PATH)
-    facility = pd.read_csv(FACILITY_PATH)
     random = pd.read_csv(RANDOM_PATH)
+    facility = pd.read_csv(FACILITY_PATH)
     critical = pd.read_csv(CRITICAL_PATH)
-    primary_summary = pd.read_csv(PRIMARY_SUMMARY_PATH)
-    municipality = pd.read_csv(
-        PRIMARY_MUNICIPALITY_PATH, dtype={"Municipality Code": str}
-    )
-    primary_openings = pd.read_csv(PRIMARY_OPENINGS_PATH)
-    if primary_summary.shape[0] != 1:
-        raise RuntimeError("Expected exactly one primary model-summary row.")
-    baseline_served = float(primary_summary.loc[0, "Final Served Demand"])
-    scenario_demand = float(primary_summary.loc[0, "Scenario Demand"])
-    shelter_inventory = int(primary_openings.shape[0])
-    if shelter_inventory != 1156:
-        raise RuntimeError(
-            f"Expected 1,156 general shelters, found {shelter_inventory}."
-        )
+    municipality = pd.read_csv(MUNICIPALITY_PATH, dtype={"Municipality Code": str})
+    baseline = facility.loc[facility["Failure Mode"].eq("baseline")].iloc[0]
+    baseline_served = float(baseline["Maximum Served Demand"])
+    total = float(baseline["Scenario Demand"])
     rows: list[dict[str, object]] = []
 
-    access_labels = {
-        "population_weighted": "Population-weighted demand",
-        "central_loss_weighted": "Central-loss-weighted demand",
-        "high_loss_weighted": "Primary: high-loss-weighted demand",
-        "10min_3kmh": "10 min at 3 km/h",
-        "15min_3kmh": "15 min at 3 km/h",
-        "30min_3kmh": "30 min at 3 km/h",
-        "10min_4kmh": "10 min at 4 km/h",
-        "30min_4kmh": "30 min at 4 km/h",
-    }
-    selected_access_scenarios = {
-        "population_weighted",
-        "central_loss_weighted",
-        "high_loss_weighted",
-        "10min_4kmh",
-        "15min_3kmh",
-        "30min_4kmh",
-    }
-    selected_access = access.loc[access["Scenario"].isin(selected_access_scenarios)]
-    if selected_access.shape[0] != 6:
-        raise RuntimeError("Expected six selected demand-geography and walking rows.")
-    for _, source in selected_access.iterrows():
-        row = row_template()
-        scenario = str(source["Scenario"])
-        row.update(
-            {
-                "Evidence Block": (
-                    "Primary / demand geography"
-                    if source["Sensitivity Dimension"] == "Demand geography"
-                    else "Walking-access sensitivity"
-                ),
-                "Scenario": access_labels[scenario],
-                "Demand Geography": (
-                    scenario.replace("_weighted", "").replace("_", " ")
-                    if source["Sensitivity Dimension"] == "Demand geography"
-                    else "high loss weighted"
-                ),
-                "Walking Speed (km/h)": source["Walking Speed (km/h)"],
-                "Time Threshold (min)": source["Time Threshold (min)"],
-                "Capacity per Shelter": source["Capacity per Open Shelter"],
-                "Maximum Open Shelters": source["Maximum Open Shelters"],
-                "Facility Unavailability": "None",
-                "Available / Modeled Open Shelters": shelter_inventory,
-                "Reachable Demand (%)": source["Reachable Percent"],
-                "Served Demand (%)": source["Served Percent"],
-                "Unmet Demand": source["Unmet Demand"],
-                "Served-Demand Change from Primary": source["Maximum Served Demand"]
-                - baseline_served,
-                "Interpretation / Solution Status": solution_note(source["Proven Optimal"]),
-            }
-        )
-        rows.append(row)
+    walk = access.loc[(access["Mode"].eq("Walking")) & (access["Demand Measure"].eq(DEMAND_MEASURE)) & (access["Time Threshold (min)"].eq(15))].iloc[0]
+    row = empty_row(); row.update({
+        "Evidence Block": "Accessibility bounds", "Scenario": "Walking bound",
+        "Vehicle-Enabled Demand Share (%)": 0, "Time Threshold (min)": 15,
+        "Accessible or Assigned Demand": round(float(walk["Accessible Demand"])),
+        "Accessible or Assigned Share (%)": float(walk["Accessible Percent"]),
+        "Explanation Gap or Service Loss": round(total - float(walk["Accessible Demand"])),
+        "Solution Qualification": "4 km/h walking network",
+    }); rows.append(row)
+    for speed_factor in (0.25, 0.50, 1.00):
+        motor = access.loc[(access["Mode"].eq("Motorized")) & (access["Demand Measure"].eq(DEMAND_MEASURE)) & (access["Road Speed Factor"].eq(speed_factor)) & (access["Time Threshold (min)"].eq(15))].iloc[0]
+        row = empty_row(); row.update({
+            "Evidence Block": "Accessibility bounds", "Scenario": "Motorized bound",
+            "Vehicle-Enabled Demand Share (%)": 100, "Road Speed Factor": speed_factor,
+            "Time Threshold (min)": 15,
+            "Accessible or Assigned Demand": round(float(motor["Accessible Demand"])),
+            "Accessible or Assigned Share (%)": float(motor["Accessible Percent"]),
+            "Explanation Gap or Service Loss": round(total - float(motor["Accessible Demand"])),
+            "Solution Qualification": "Connectors walked; road travel motorized",
+        }); rows.append(row)
+    for share in (0.25, 0.50, 0.75, 1.00):
+        source = mixed.loc[mixed["Vehicle-Enabled Demand Share"].eq(share)].iloc[0]
+        row = empty_row(); row.update({
+            "Evidence Block": "Accessibility bounds", "Scenario": "Mixed-mode sensitivity",
+            "Vehicle-Enabled Demand Share (%)": 100 * share,
+            "Road Speed Factor": float(source["Motorized Road Speed Factor"]),
+            "Time Threshold (min)": int(source["Time Threshold (min)"]),
+            "Accessible or Assigned Demand": round(float(source["Accessible Demand"])),
+            "Accessible or Assigned Share (%)": float(source["Accessible Percent"]),
+            "Explanation Gap or Service Loss": round(float(source["Explanation Gap"])),
+            "Solution Qualification": "Share is a sensitivity parameter",
+        }); rows.append(row)
 
-    selected_capacity = capacity.loc[
-        ((capacity["Maximum Open Shelters"] == 415) & (capacity["Capacity per Open Shelter"] != 50))
-        | ((capacity["Maximum Open Shelters"] == shelter_inventory) & (capacity["Capacity per Open Shelter"] == 100))
-    ]
-    if selected_capacity.shape[0] != 4:
-        raise RuntimeError("Expected four selected capacity/opening rows.")
-    for _, source in selected_capacity.iterrows():
-        all_available = int(source["Maximum Open Shelters"]) == shelter_inventory
-        row = row_template()
-        row.update(
-            {
-                "Evidence Block": "Capacity / opening sensitivity",
-                "Scenario": (
-                    f"{int(source['Capacity per Open Shelter'])} persons; "
-                    + ("all shelters available" if all_available else "maximum 415 open")
-                ),
-                "Demand Geography": "high loss weighted",
-                "Walking Speed (km/h)": 4.0,
-                "Time Threshold (min)": 15.0,
-                "Capacity per Shelter": source["Capacity per Open Shelter"],
-                "Maximum Open Shelters": source["Maximum Open Shelters"],
-                "Facility Unavailability": "None",
-                "Available / Modeled Open Shelters": shelter_inventory,
-                "Reachable Demand (%)": 100
-                * source["Geographically Reachable Demand"]
-                / source["Scenario Demand"],
-                "Served Demand (%)": source["Served Percent"],
-                "Unmet Demand": source["Unmet Demand"],
-                "Served-Demand Change from Primary": source["Maximum Served Demand"]
-                - baseline_served,
-                "Interpretation / Solution Status": solution_note(source["Proven Optimal"]),
-            }
-        )
-        rows.append(row)
+    for capacity_value in (25, 50, 100, 200):
+        source = capacity.loc[(capacity["Capacity per Open Shelter"].eq(capacity_value)) & (capacity["Maximum Open Shelters"].eq(415))].iloc[0]
+        role = "Stress" if capacity_value == 50 else "Central" if capacity_value == 100 else "Sensitivity"
+        row = empty_row(); row.update({
+            "Evidence Block": "Capacity allocation", "Scenario": f"{role} capacity case",
+            "Vehicle-Enabled Demand Share (%)": 0, "Time Threshold (min)": 15,
+            "Capacity per Shelter": capacity_value, "Maximum Open Shelters": 415,
+            "Available Shelters": 1156,
+            "Accessible or Assigned Demand": round(float(source["Maximum Served Demand"])),
+            "Accessible or Assigned Share (%)": float(source["Served Percent"]),
+            "Explanation Gap or Service Loss": round(float(source["Unmet Demand"])),
+            "Solution Qualification": "Optimal" if bool(source["Proven Optimal"]) else "Time-limit incumbent; lower bound",
+        }); rows.append(row)
 
-    selected_random = random.loc[random["Unavailability Share"].isin([0.1, 0.3])]
-    if selected_random.shape[0] != 2:
-        raise RuntimeError("Expected random 10% and 30% unavailability summaries.")
-    for _, source in selected_random.iterrows():
+    row = empty_row(); row.update({
+        "Evidence Block": "Facility unavailability", "Scenario": "Baseline allocation",
+        "Vehicle-Enabled Demand Share (%)": 0, "Time Threshold (min)": 15,
+        "Capacity per Shelter": 50, "Maximum Open Shelters": 415,
+        "Available Shelters": int(baseline["Available Shelters"]),
+        "Accessible or Assigned Demand": round(baseline_served),
+        "Accessible or Assigned Share (%)": float(baseline["Served Percent"]),
+        "Explanation Gap or Service Loss": 0, "Solution Qualification": "Optimal",
+    }); rows.append(row)
+    for share in (0.10, 0.20, 0.30):
+        source = random.loc[random["Unavailability Share"].eq(share)].iloc[0]
+        row = empty_row(); row.update({
+            "Evidence Block": "Facility unavailability", "Scenario": f"Random {int(share * 100)}% removal",
+            "Vehicle-Enabled Demand Share (%)": 0, "Time Threshold (min)": 15,
+            "Capacity per Shelter": 50, "Maximum Open Shelters": 415,
+            "Available Shelters": round(1156 * (1 - share)),
+            "Accessible or Assigned Demand": round(float(source["Mean_Served_Demand"])),
+            "Accessible or Assigned Share (%)": float(source["Mean_Served_Percent"]),
+            "Explanation Gap or Service Loss": round(float(source["Mean_Service_Loss"])),
+            "Solution Qualification": f"Mean of {int(source['Draws'])} reproducible draws",
+        }); rows.append(row)
+    targeted = facility.loc[facility["Failure Mode"].eq("targeted_high_reachable_pressure")]
+    for _, source in targeted.sort_values("Unavailability Share").iterrows():
         share = float(source["Unavailability Share"])
-        row = row_template()
-        row.update(
-            {
-                "Evidence Block": "Facility-unavailability sensitivity",
-                "Scenario": f"Random {int(share * 100)}% loss; mean of {int(source['Draws'])} draws",
-                "Demand Geography": "high loss weighted",
-                "Walking Speed (km/h)": 4.0,
-                "Time Threshold (min)": 15.0,
-                "Capacity per Shelter": 50.0,
-                "Maximum Open Shelters": 415,
-                "Facility Unavailability": f"Random {int(share * 100)}%",
-                "Available / Modeled Open Shelters": round(
-                    shelter_inventory * (1 - share)
-                ),
-                "Reachable Demand (%)": None,
-                "Served Demand (%)": source["Mean_Served_Percent"],
-                "Unmet Demand": scenario_demand - source["Mean_Served_Demand"],
-                "Served-Demand Change from Primary": -source["Mean_Service_Loss"],
-                "Interpretation / Solution Status": "Mean across reproducible random draws",
-            }
-        )
-        rows.append(row)
+        row = empty_row(); row.update({
+            "Evidence Block": "Facility unavailability", "Scenario": f"Pressure-targeted {int(share * 100)}% removal",
+            "Vehicle-Enabled Demand Share (%)": 0, "Time Threshold (min)": 15,
+            "Capacity per Shelter": 50, "Maximum Open Shelters": 415,
+            "Available Shelters": int(source["Available Shelters"]),
+            "Accessible or Assigned Demand": round(float(source["Maximum Served Demand"])),
+            "Accessible or Assigned Share (%)": float(source["Served Percent"]),
+            "Explanation Gap or Service Loss": round(float(source["Service Loss from Baseline"])),
+            "Solution Qualification": "Optimal",
+        }); rows.append(row)
 
-    targeted = facility.loc[facility["Failure Mode"] == "targeted_high_reachable_pressure"]
-    for _, source in targeted.iterrows():
-        share = float(source["Unavailability Share"])
-        row = row_template()
-        row.update(
-            {
-                "Evidence Block": "Facility-unavailability sensitivity",
-                "Scenario": f"Targeted removal of highest-pressure {int(share * 100)}%",
-                "Demand Geography": "high loss weighted",
-                "Walking Speed (km/h)": 4.0,
-                "Time Threshold (min)": 15.0,
-                "Capacity per Shelter": 50.0,
-                "Maximum Open Shelters": 415,
-                "Facility Unavailability": f"Targeted {int(share * 100)}%",
-                "Available / Modeled Open Shelters": source["Available Shelters"],
-                "Reachable Demand (%)": None,
-                "Served Demand (%)": source["Served Percent"],
-                "Unmet Demand": source["Unmet Demand"],
-                "Served-Demand Change from Primary": -source["Service Loss from Baseline"],
-                "Interpretation / Solution Status": solution_note(source["Proven Optimal"]),
-            }
-        )
-        rows.append(row)
+    walk_m = municipality.loc[municipality["Vehicle-Enabled Demand Share"].eq(0)].set_index("Municipality Code")
+    motor_m = municipality.loc[municipality["Vehicle-Enabled Demand Share"].eq(1)].set_index("Municipality Code")
+    gains = walk_m[["Stress Load", "Accessible Demand", "Accessible Percent"]].join(motor_m[["Accessible Demand", "Accessible Percent"]], lsuffix=" Walk", rsuffix=" Motor")
+    gains["Demand Gain"] = gains["Accessible Demand Motor"] - gains["Accessible Demand Walk"]
+    for code, source in gains.sort_values("Demand Gain", ascending=False).head(3).iterrows():
+        row = empty_row(); row.update({
+            "Evidence Block": "Municipality mode gap", "Scenario": ENGLISH_NAMES[str(code)],
+            "Vehicle-Enabled Demand Share (%)": 100, "Road Speed Factor": 0.5,
+            "Time Threshold (min)": 15,
+            "Accessible or Assigned Demand": round(float(source["Accessible Demand Motor"])),
+            "Accessible or Assigned Share (%)": float(source["Accessible Percent Motor"]),
+            "Explanation Gap or Service Loss": round(float(source["Demand Gain"])),
+            "Solution Qualification": f"Gain over walking bound; walk {source['Accessible Percent Walk']:.1f}%",
+        }); rows.append(row)
 
-    municipality = municipality.sort_values(
-        ["Unmet_Demand", "Municipality Code"], ascending=[False, True]
-    ).head(5)
-    if municipality.shape[0] != 5:
-        raise RuntimeError("Expected five high-unmet-demand municipalities.")
-    for rank, (_, source) in enumerate(municipality.iterrows(), start=1):
-        municipality_name = ENGLISH_MUNICIPALITY_NAMES.get(
-            str(source["Municipality Code"])
-        )
-        if municipality_name is None:
-            raise RuntimeError(
-                f"Missing English municipality name for {source['Municipality Code']}."
-            )
-        row = row_template()
-        row.update(
-            {
-                "Evidence Block": "Municipality primary gaps",
-                "Scenario": f"{rank}. {municipality_name}",
-                "Demand Geography": "high loss weighted",
-                "Walking Speed (km/h)": 4.0,
-                "Time Threshold (min)": 15.0,
-                "Capacity per Shelter": 50.0,
-                "Maximum Open Shelters": 415,
-                "Facility Unavailability": "None",
-                "Available / Modeled Open Shelters": source[
-                    "Modeled_Open_Shelters"
-                ],
-                "Reachable Demand (%)": None,
-                "Served Demand (%)": source["Served Percent"],
-                "Unmet Demand": source["Unmet_Demand"],
-                "Served-Demand Change from Primary": None,
-                "Interpretation / Solution Status": (
-                    f"Primary modeled demand {source['Scenario_Demand']:,.1f}; "
-                    "ranked by municipality unmet demand"
-                ),
-            }
-        )
-        rows.append(row)
-
-    critical = critical.sort_values(
-        "Single-Shelter Service-Loss Lower Bound", ascending=False
-    ).head(4)
-    for rank, (_, source) in enumerate(critical.iterrows(), start=1):
-        shelter_name = ENGLISH_CRITICAL_SHELTER_NAMES.get(str(source["Shelter ID"]))
-        if shelter_name is None:
-            raise RuntimeError(f"Missing English shelter name for {source['Shelter ID']}.")
-        served = float(source["Served Demand after Removal"])
-        row = row_template()
-        row.update(
-            {
-                "Evidence Block": "Critical single-shelter loss",
-                "Scenario": f"{rank}. {shelter_name}",
-                "Demand Geography": "high loss weighted",
-                "Walking Speed (km/h)": 4.0,
-                "Time Threshold (min)": 15.0,
-                "Capacity per Shelter": 50.0,
-                "Maximum Open Shelters": 415,
-                "Facility Unavailability": "One critical shelter",
-                "Available / Modeled Open Shelters": shelter_inventory - 1,
-                "Reachable Demand (%)": None,
-                "Served Demand (%)": 100 * served / scenario_demand,
-                "Unmet Demand": scenario_demand - served,
-                "Served-Demand Change from Primary": -source[
-                    "Single-Shelter Service-Loss Lower Bound"
-                ],
-                "Interpretation / Solution Status": (
-                    "Screened among 30 highest reachable-pressure shelters; "
-                    + solution_note(source["Proven Optimal"])
-                ),
-            }
-        )
-        rows.append(row)
+    for _, source in critical.sort_values("Single-Shelter Service-Loss Lower Bound", ascending=False).head(4).iterrows():
+        shelter_id = str(source["Shelter ID"])
+        row = empty_row(); row.update({
+            "Evidence Block": "Single-shelter loss", "Scenario": CRITICAL_NAMES[shelter_id],
+            "Vehicle-Enabled Demand Share (%)": 0, "Time Threshold (min)": 15,
+            "Capacity per Shelter": 50, "Maximum Open Shelters": 415,
+            "Available Shelters": 1155,
+            "Accessible or Assigned Demand": round(float(source["Served Demand after Removal"])),
+            "Accessible or Assigned Share (%)": 100 * float(source["Served Demand after Removal"]) / total,
+            "Explanation Gap or Service Loss": round(float(source["Single-Shelter Service-Loss Lower Bound"])),
+            "Solution Qualification": "Screened among 30 high-pressure shelters",
+        }); rows.append(row)
 
     table = pd.DataFrame(rows, columns=COLUMNS)
-    if table.shape != (24, 14):
-        raise RuntimeError(f"Expected a 24 × 14 table, found {table.shape}.")
-    if table["Evidence Block"].nunique() != 6:
-        raise RuntimeError("Expected six evidence blocks.")
+    if table.shape != (26, 12):
+        raise RuntimeError(f"Expected a 26 x 12 table, found {table.shape}.")
+    if not table["Scenario"].eq("Random 20% removal").any():
+        raise RuntimeError("The random 20% facility-removal result is missing.")
     return table
+
+
+def notes_table() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            ("Demand surface", "All rows use the 10,467-scaled high-housing-loss stress surface; it is counterfactual spatial demand, not observed municipality shelter use."),
+            ("Accessibility bounds", "Walking is a restrictive lower bound. Motorized travel uses assumed road speeds and walking connectors; mixed-mode shares are sensitivity parameters."),
+            ("Central motorized assumption", "The central motorized comparison applies 50% of baseline road speed within 15 minutes."),
+            ("Capacity roles", "The 100-person case is central, 50 persons is a conservative stress case, and 25 and 200 persons are sensitivity cases."),
+            ("Explanation gap", "The difference between total stress load and modeled accessible or assigned demand is not observed refusal or unsheltered population."),
+            ("Random unavailability", "Each random-removal row reports the mean of 30 reproducible draws; the 20% result is included."),
+            ("Targeted unavailability", "Pressure-targeted removal orders shelters by reachable stress pressure and is an adverse sensitivity test."),
+            ("Single-shelter screen", "Losses cover the 30 highest reachable-pressure shelters and therefore do not constitute an exhaustive ranking of all 1,156 general shelters."),
+            ("Solution status", "The 25-person, 415-opening capacity case is a time-limit incumbent and a lower bound on served demand; other displayed allocation cases are optimal or near-optimal as noted."),
+            ("Primary interpretation", "The accessibility ceiling changes far more than assigned share across plausible capacity cases, indicating that accessibility is the binding planning dimension."),
+        ],
+        columns=["Note", "Definition or Limitation"],
+    )
 
 
 def style_workbook(path: Path) -> None:
     workbook = load_workbook(path)
+    thin = Border(bottom=Side(style="thin", color="D0D5DD"))
+    header_fill = PatternFill("solid", fgColor="17365D")
+    header_font = Font(name="Aptos", size=9, bold=True, color="FFFFFF")
+    body_font = Font(name="Aptos", size=8.2, color="172033")
     worksheet = workbook[SHEET_NAME]
     worksheet.sheet_view.showGridLines = False
     worksheet.freeze_panes = "A2"
-    worksheet.auto_filter.ref = f"A1:N{worksheet.max_row}"
+    worksheet.auto_filter.ref = f"A1:L{worksheet.max_row}"
     worksheet.sheet_view.zoomScale = 75
-    worksheet.print_area = f"A1:N{worksheet.max_row}"
+    worksheet.print_area = f"A1:L{worksheet.max_row}"
     worksheet.print_title_rows = "1:1"
     worksheet.page_setup.orientation = "landscape"
     worksheet.page_setup.paperSize = worksheet.PAPERSIZE_A3
     worksheet.page_setup.fitToWidth = 1
     worksheet.page_setup.fitToHeight = 1
     worksheet.sheet_properties.pageSetUpPr.fitToPage = True
-    worksheet.page_margins = PageMargins(
-        left=0.20, right=0.20, top=0.28, bottom=0.28, header=0.12, footer=0.12
-    )
-
-    header_fill = PatternFill("solid", fgColor="17365D")
-    header_font = Font(name="Aptos", size=9, bold=True, color="FFFFFF")
-    body_font = Font(name="Aptos", size=8.5, color="172033")
-    thin_border = Border(bottom=Side(style="thin", color="D0D5DD"))
+    worksheet.page_margins = PageMargins(left=0.18, right=0.18, top=0.25, bottom=0.25, header=0.10, footer=0.10)
     for cell in worksheet[1]:
-        cell.fill = header_fill
-        cell.font = header_font
+        cell.fill = header_fill; cell.font = header_font
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
     worksheet.row_dimensions[1].height = 58
-
-    block_fills = {
-        "Primary / demand geography": "DDEBF7",
-        "Walking-access sensitivity": "E8F3EC",
-        "Capacity / opening sensitivity": "FFF1D6",
-        "Facility-unavailability sensitivity": "FDE7E3",
-        "Municipality primary gaps": "E8EAF6",
-        "Critical single-shelter loss": "F2EBF6",
-    }
-    for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
+    fills = {"Accessibility bounds": "DDEBF7", "Capacity allocation": "FFF1D6", "Facility unavailability": "FDE7E3", "Municipality mode gap": "E8F3EC", "Single-shelter loss": "F2EBF6"}
+    for row in worksheet.iter_rows(min_row=2):
         for cell in row:
-            cell.font = body_font
-            cell.alignment = Alignment(vertical="top", wrap_text=True)
-            cell.border = thin_border
-        block = str(row[0].value)
-        row[0].fill = PatternFill("solid", fgColor=block_fills[block])
-        row[0].font = Font(name="Aptos", size=8.5, bold=True, color="17365D")
-        for position in range(3, 13):
-            row[position].alignment = Alignment(horizontal="right", vertical="top")
-        for position in (3, 4):
-            row[position].number_format = "0.0"
-        for position in (5, 6, 8):
-            row[position].number_format = "#,##0"
-        row[9].number_format = "0.0"
-        row[10].number_format = "0.0"
-        row[11].number_format = "#,##0.0"
-        row[12].number_format = "#,##0.0"
-        if "Time-limit" in str(row[13].value):
-            row[13].fill = PatternFill("solid", fgColor="FFF1D6")
-        worksheet.row_dimensions[row[0].row].height = 38
-
-    widths = {
-        "A": 28,
-        "B": 43,
-        "C": 22,
-        "D": 16,
-        "E": 17,
-        "F": 18,
-        "G": 19,
-        "H": 23,
-        "I": 16,
-        "J": 18,
-        "K": 17,
-        "L": 17,
-        "M": 20,
-        "N": 47,
-    }
-    for column, width in widths.items():
+            cell.font = body_font; cell.alignment = Alignment(vertical="center", wrap_text=True); cell.border = thin
+        row[0].fill = PatternFill("solid", fgColor=fills[str(row[0].value)])
+        row[0].font = Font(name="Aptos", size=8.2, bold=True, color="17365D")
+        for index in range(2, 11):
+            row[index].alignment = Alignment(horizontal="right", vertical="center")
+        for index in (2, 4, 9): row[index].number_format = "0.0"
+        row[3].number_format = "0.00"
+        for index in (5, 6, 7, 8, 10): row[index].number_format = "#,##0"
+        worksheet.row_dimensions[row[0].row].height = 37
+    for column, width in {"A": 25, "B": 43, "C": 20, "D": 17, "E": 18, "F": 18, "G": 19, "H": 17, "I": 25, "J": 24, "K": 24, "L": 43}.items():
         worksheet.column_dimensions[column].width = width
-
-    table = Table(displayName="NetworkAdequacyRobustness", ref=f"A1:N{worksheet.max_row}")
-    table.tableStyleInfo = TableStyleInfo(
-        name="TableStyleMedium2",
-        showFirstColumn=False,
-        showLastColumn=False,
-        showRowStripes=True,
-        showColumnStripes=False,
-    )
-    worksheet.add_table(table)
+    excel_table = Table(displayName="NetworkAccessibilityRobustness", ref=f"A1:L{worksheet.max_row}")
+    excel_table.tableStyleInfo = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False, showRowStripes=True, showColumnStripes=False)
+    worksheet.add_table(excel_table)
+    notes = workbook["Notes"]
+    notes.sheet_view.showGridLines = False; notes.freeze_panes = "A2"
+    notes.column_dimensions["A"].width = 28; notes.column_dimensions["B"].width = 112
+    for cell in notes[1]:
+        cell.fill = header_fill; cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    for row in notes.iter_rows(min_row=2):
+        for cell in row:
+            cell.font = body_font; cell.alignment = Alignment(vertical="top", wrap_text=True); cell.border = thin
+        row[0].font = Font(name="Aptos", size=8.2, bold=True, color="17365D")
+        notes.row_dimensions[row[0].row].height = 40
     workbook.save(path)
 
 
 def verify_workbook(path: Path) -> None:
     workbook = load_workbook(path, data_only=False)
     worksheet = workbook[SHEET_NAME]
-    if worksheet.max_row != 25 or worksheet.max_column != 14:
-        raise RuntimeError(
-            f"Unexpected workbook dimensions: {worksheet.max_row} rows × {worksheet.max_column} columns."
-        )
-    if worksheet.freeze_panes != "A2":
-        raise RuntimeError("Expected the header row to be frozen at A2.")
+    if worksheet.max_row != 27 or worksheet.max_column != 12:
+        raise RuntimeError(f"Unexpected main-sheet dimensions: {worksheet.max_row} x {worksheet.max_column}.")
     if worksheet.merged_cells.ranges:
         raise RuntimeError("Merged cells are not permitted in article-facing tables.")
-    for row in worksheet.iter_rows():
-        for cell in row:
-            if isinstance(cell.value, str) and any(
-                error in cell.value
-                for error in ("#REF!", "#DIV/0!", "#VALUE!", "#NAME?", "#N/A")
-            ):
-                raise RuntimeError(f"Formula error text found in {cell.coordinate}: {cell.value}")
+    if workbook.sheetnames != [SHEET_NAME, "Notes"]:
+        raise RuntimeError(f"Unexpected sheet order: {workbook.sheetnames}")
 
 
 def main() -> None:
-    table = build_table()
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with pd.ExcelWriter(OUTPUT_PATH, engine="openpyxl") as writer:
-        table.to_excel(writer, sheet_name=SHEET_NAME, index=False)
-    style_workbook(OUTPUT_PATH)
-    verify_workbook(OUTPUT_PATH)
-    print(f"Saved {OUTPUT_PATH}")
+        build_table().to_excel(writer, sheet_name=SHEET_NAME, index=False)
+        notes_table().to_excel(writer, sheet_name="Notes", index=False)
+    style_workbook(OUTPUT_PATH); verify_workbook(OUTPUT_PATH)
+    print(f"Saved: {OUTPUT_PATH.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

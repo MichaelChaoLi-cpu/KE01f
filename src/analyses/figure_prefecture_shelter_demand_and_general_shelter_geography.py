@@ -45,21 +45,25 @@ PANELS = (
         "Housing-Loss Shelter Demand High",
         "High housing-loss demand (persons / 125 m mesh)",
         "housing_loss",
+        "High housing-loss demand",
     ),
     (
         "Observed-Use Stress Demand Population Weighted",
         "10,467 stress: population-weighted (persons / mesh)",
         "observed_use_stress",
+        "Population-weighted stress",
     ),
     (
         "Observed-Use Stress Demand Central Housing-Loss Weighted",
         "10,467 stress: central-loss-weighted (persons / mesh)",
         "observed_use_stress",
+        "Central-loss-weighted stress",
     ),
     (
         "Observed-Use Stress Demand High Housing-Loss Weighted",
         "10,467 stress: high-loss-weighted (persons / mesh)",
         "observed_use_stress",
+        "High-loss-weighted stress",
     ),
 )
 
@@ -163,7 +167,7 @@ def main() -> None:
 
     housing_values = mesh[PANELS[0][0]].to_numpy(dtype=float)
     stress_values = np.concatenate(
-        [mesh[column].to_numpy(dtype=float) for column, _, group in PANELS if group == "observed_use_stress"]
+        [mesh[column].to_numpy(dtype=float) for column, _, group, _ in PANELS if group == "observed_use_stress"]
     )
     color_limits = {
         "housing_loss": float(np.nanquantile(housing_values, 0.995)),
@@ -186,7 +190,7 @@ def main() -> None:
     fig, axes = plt.subplots(2, 2, figsize=(14.2, 11.2), constrained_layout=False)
     fig.subplots_adjust(left=0.055, right=0.985, top=0.985, bottom=0.080, wspace=0.08, hspace=0.18)
 
-    for index, (ax, (column, colorbar_label, group)) in enumerate(zip(axes.flat, PANELS)):
+    for index, (ax, (column, colorbar_label, group, descriptor)) in enumerate(zip(axes.flat, PANELS)):
         values = mesh[column].to_numpy(dtype=float)
         norm = PowerNorm(gamma=0.48, vmin=0.0, vmax=color_limits[group], clip=False)
 
@@ -263,16 +267,16 @@ def main() -> None:
         ax.grid(color="#d6d6d6", linewidth=0.35, linestyle=(0, (2, 3)), zorder=1)
 
         ax.text(
-            0.018,
-            0.974,
-            chr(ord("a") + index),
+            0.0,
+            1.025,
+            f"{chr(ord('a') + index)}: {descriptor}",
             transform=ax.transAxes,
             ha="left",
-            va="top",
-            fontsize=12,
+            va="bottom",
+            fontsize=9.2,
             fontweight="bold",
             color="#222222",
-            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.78, "pad": 2.0},
+            clip_on=False,
             zorder=13,
         )
         total = float(np.nansum(values))

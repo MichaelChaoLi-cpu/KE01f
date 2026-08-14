@@ -20,9 +20,6 @@ ROOT = Path(__file__).resolve().parents[2]
 MUNICIPALITY_RESULTS = (
     ROOT / "data/exp/capacity-threshold-estimate/municipality_capacity_thresholds.csv"
 )
-CRITICAL_RESULTS = (
-    ROOT / "data/exp/capacity-threshold-estimate/critical_capacity_at_observed_open_scale.csv"
-)
 BOUNDARY_PATH = (
     ROOT
     / "data/raw/prior_projects/KE01b/kumamoto_administrative_areas_preprocessed.parquet"
@@ -39,16 +36,15 @@ HYPOCENTER_LON = 130 + 40.7 / 60
 ENGLISH_NAMES = {
     "43100": "Kumamoto City",
     "43202": "Yatsushiro",
+    "43204": "Arao",
+    "43206": "Tamana",
     "43211": "Uto",
     "43213": "Uki",
+    "43216": "Koshi",
+    "43348": "Misato",
+    "43404": "Kikuyo",
+    "43443": "Mashiki",
     "43468": "Hikawa",
-}
-
-SCENARIO_LABELS = {
-    "Modeled high housing-loss demand": "Modeled high housing-loss\ndemand (2,283)",
-    "Observed-use stress, population weighted": "Population-weighted\nstress (10,467)",
-    "Observed-use stress, high housing-loss weighted": "High-loss-weighted\nstress (10,467)",
-    "Observed-use stress, central housing-loss weighted": "Central-loss-weighted\nstress (10,467)",
 }
 
 
@@ -83,18 +79,18 @@ def add_north_arrow(ax: plt.Axes) -> None:
     )
 
 
-def add_panel_label(ax: plt.Axes, label: str) -> None:
+def add_panel_heading(ax: plt.Axes, label: str, descriptor: str) -> None:
     ax.text(
-        0.018,
-        0.975,
-        label,
+        0.0,
+        1.025,
+        f"{label}: {descriptor}",
         transform=ax.transAxes,
         ha="left",
-        va="top",
-        fontsize=12,
+        va="bottom",
+        fontsize=9.2,
         fontweight="bold",
         color="#222222",
-        bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.82, "pad": 2.0},
+        clip_on=False,
         zorder=14,
     )
 
@@ -138,6 +134,7 @@ def draw_map(
     norm: Normalize,
     colorbar_label: str,
     panel_label: str,
+    panel_descriptor: str,
     label_codes: list[str],
     label_suffix: str,
     extent: tuple[float, float, float, float],
@@ -195,7 +192,7 @@ def draw_map(
     ax.tick_params(labelsize=7.3, length=2.5, pad=2)
     ax.grid(color="#d8d8d8", linewidth=0.35, linestyle=(0, (2, 3)), zorder=0)
     add_north_arrow(ax)
-    add_panel_label(ax, panel_label)
+    add_panel_heading(ax, panel_label, panel_descriptor)
 
     colorbar = plt.colorbar(
         ScalarMappable(norm=norm, cmap=cmap),
@@ -248,7 +245,8 @@ def main() -> None:
     mean_latitude = (y_min + y_max) / 2
 
     required_capacity = primary["Required Capacity if All General Shelters Open"]
-    minimum_openings = primary["Minimum Open Shelters Required at 50 Persons"]
+    minimum_openings_50 = primary["Minimum Open Shelters Required at 50 Persons"]
+    minimum_openings_100 = primary["Minimum Open Shelters Required at 100 Persons"]
 
     plt.rcParams.update(
         {
@@ -283,6 +281,7 @@ def main() -> None:
         Normalize(vmin=0, vmax=50),
         "Required average capacity if all local general shelters open (persons)",
         "a",
+        "Average capacity required under high-loss weighting",
         ["43202", "43213", "43468"],
         "",
         extent,
@@ -291,78 +290,67 @@ def main() -> None:
     draw_map(
         ax_b,
         geometries,
-        minimum_openings,
-        PowerNorm(gamma=0.62, vmin=0, vmax=70),
-        "Minimum local general shelters to open at 50 persons each",
+        minimum_openings_100,
+        PowerNorm(gamma=0.62, vmin=0, vmax=35),
+        "Minimum local general shelters to open at 100 persons each",
         "b",
+        "Minimum openings under the 100-person central case",
         ["43100", "43202", "43213"],
         "",
         extent,
         mean_latitude,
     )
 
-    critical = pd.read_csv(CRITICAL_RESULTS)
-    scenario_order = [
-        "Modeled high housing-loss demand",
-        "Observed-use stress, population weighted",
-        "Observed-use stress, high housing-loss weighted",
-        "Observed-use stress, central housing-loss weighted",
+    top = primary.nlargest(10, "Required Capacity if All General Shelters Open").copy()
+    top["English Municipality"] = [
+        ENGLISH_NAMES.get(code, code) for code in top.index
     ]
-    critical = critical.set_index("Demand Scenario").loc[scenario_order].reset_index()
-    capacity = critical["Critical Integer Capacity per Open Shelter"].to_numpy(dtype=float)
-    y = np.arange(len(critical))
-    bar_colors = plt.get_cmap("YlOrRd")(Normalize(0, 50)(capacity))
-    bars = ax_c.barh(y, capacity, color=bar_colors, edgecolor="#6b2f1e", linewidth=0.55, height=0.62)
-    ax_c.axvline(50, color="#176B87", linewidth=1.5, linestyle=(0, (5, 3)), zorder=5)
-    ax_c.text(
-        50.8,
-        3.42,
-        "50-person primary threshold",
-        color="#176B87",
-        fontsize=8,
-        fontweight="bold",
-        ha="left",
-        va="center",
+    top = top.sort_values("Required Capacity if All General Shelters Open")
+    y = np.arange(len(top))
+    height = 0.34
+    bars_50 = ax_c.barh(
+        y - height / 2,
+        top["Minimum Open Shelters Required at 50 Persons"],
+        height=height,
+        color="#D77A2D",
+        edgecolor="#8C4B17",
+        linewidth=0.55,
+        label="50-person conservative stress case",
+        zorder=3,
     )
-
-    binding_name = {"熊本市": "Kumamoto City", "八代市": "Yatsushiro"}
-    for bar, (_, row) in zip(bars, critical.iterrows()):
-        value = int(row["Critical Integer Capacity per Open Shelter"])
-        openings = int(row["Minimum Open Shelters at Critical Capacity"])
-        binding = binding_name.get(
-            row["Binding or Highest-Pressure Municipality"],
-            str(row["Binding or Highest-Pressure Municipality"]),
-        )
-        ax_c.text(
-            max(1.0, value - 1.2),
-            bar.get_y() + bar.get_height() / 2,
-            f"{value}",
-            ha="right",
-            va="center",
-            fontsize=9,
-            fontweight="bold",
-            color="white" if value >= 20 else "#4b2519",
-        )
-        ax_c.text(
-            value + 1.2,
-            bar.get_y() + bar.get_height() / 2,
-            f"{openings} openings; highest pressure: {binding}",
-            ha="left",
-            va="center",
-            fontsize=7.6,
-            color="#303030",
-        )
-
-    ax_c.set_yticks(y, [SCENARIO_LABELS[name] for name in scenario_order])
+    bars_100 = ax_c.barh(
+        y + height / 2,
+        top["Minimum Open Shelters Required at 100 Persons"],
+        height=height,
+        color="#176B87",
+        edgecolor="#0D485D",
+        linewidth=0.55,
+        label="100-person central capacity case",
+        zorder=3,
+    )
+    for bars in (bars_50, bars_100):
+        for bar in bars:
+            value = int(round(bar.get_width()))
+            ax_c.text(
+                value + 0.8,
+                bar.get_y() + bar.get_height() / 2,
+                f"{value}",
+                ha="left",
+                va="center",
+                fontsize=7.5,
+                color="#303030",
+            )
+    ax_c.set_yticks(y, top["English Municipality"])
     ax_c.invert_yaxis()
-    ax_c.set_xlim(0, 82)
-    ax_c.set_xlabel("Modeled critical capacity per open general shelter (persons)", fontsize=8.6)
+    ax_c.set_xlim(0, 75)
+    ax_c.set_xlabel("Municipality-contained minimum general-shelter openings", fontsize=8.6)
     ax_c.tick_params(axis="y", labelsize=8.2, length=0, pad=8)
     ax_c.tick_params(axis="x", labelsize=8, length=3)
     ax_c.xaxis.set_major_locator(MultipleLocator(10))
     ax_c.grid(axis="x", color="#d5d5d5", linewidth=0.5, linestyle=(0, (2, 3)), zorder=0)
     ax_c.spines[["top", "right", "left"]].set_visible(False)
-    add_panel_label(ax_c, "c")
+    ax_c.legend(loc="lower right", frameon=False, fontsize=8.0)
+    add_panel_heading(ax_c, "c", "Opening requirements for one high-loss-weighted scenario")
 
     legend_handles = [
         Line2D(
